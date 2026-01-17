@@ -3,184 +3,152 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Crewgle /<title>
+    <title>Crewgle | Searchmas</title>
     <style>
-        :root { --bg: #0b111e; --red: #c51111; --blue: #225ee1; --visor: #83d5e6; }
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Arial', sans-serif; background: var(--bg); color: white; overflow: hidden; touch-action: none; }
+        :root { --space: #0b111e; --ship-floor: #3e444e; --wall: #2c313a; --red: #c51111; --visor: #83d5e6; }
+        body, html { margin: 0; padding: 0; height: 100%; background: var(--space); color: white; overflow: hidden; font-family: sans-serif; }
 
-        /* Search UI */
-        #home-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; transition: 0.5s ease-in-out; }
-        .logo { font-size: clamp(3rem, 10vw, 5rem); font-weight: bold; margin-bottom: 20px; }
-        .search-box { width: 80%; max-width: 500px; padding: 15px 25px; border-radius: 30px; border: none; font-size: 1.1rem; outline: none; }
-        
-        /* Iframe Results */
-        #results-frame { position: fixed; top: 0; left: 0; width: 100%; height: calc(100% - 80px); display: none; border: none; background: white; }
+        /* UI Overlay */
+        #home-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; transition: 0.5s; }
+        .search-box { width: 80%; max-width: 500px; padding: 15px; border-radius: 30px; border: none; outline: none; text-align: center; font-size: 1.2rem; }
 
-        /* Game Layer */
-        #game-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #111; z-index: 1000; }
-        #gameCanvas { width: 100%; height: 100%; display: block; }
+        /* The Game */
+        #game-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 1000; }
+        canvas { display: block; width: 100%; height: 100%; }
 
-        /* Mobile Joystick */
-        #joystick-container { 
-            position: fixed; bottom: 120px; left: 50px; width: 100px; height: 100px; 
-            background: rgba(255,255,255,0.1); border-radius: 50%; display: none; z-index: 1100;
-        }
-        #joystick-knob { 
-            position: absolute; top: 25px; left: 25px; width: 50px; height: 50px; 
-            background: rgba(255,255,255,0.3); border-radius: 50%; 
-        }
+        /* Joystick for Mobile */
+        #joy { position: fixed; bottom: 50px; left: 50px; width: 100px; height: 100px; background: rgba(255,255,255,0.2); border-radius: 50%; display: none; touch-action: none; }
+        #knob { position: absolute; top: 25px; left: 25px; width: 50px; height: 50px; background: #fff; border-radius: 50%; opacity: 0.5; }
 
-        /* Nav Crewmates */
-        .nav { position: fixed; bottom: 0; width: 100%; height: 80px; display: flex; justify-content: space-around; align-items: center; background: rgba(0,0,0,0.5); z-index: 2000; }
-        .crewmate { width: 40px; height: 55px; border: 3px solid #000; border-radius: 15px 15px 8px 8px; position: relative; cursor: pointer; }
-        .red { background: var(--red); }
-        .blue { background: var(--blue); }
-        .visor { position: absolute; top: 10px; left: 8px; width: 25px; height: 12px; background: var(--visor); border: 2px solid #000; border-radius: 8px; }
+        /* Nav */
+        .nav { position: fixed; bottom: 10px; width: 100%; display: flex; justify-content: center; gap: 40px; pointer-events: none; }
+        .crew { width: 30px; height: 40px; border: 2px solid #000; border-radius: 10px; position: relative; pointer-events: auto; cursor: pointer; }
+        .visor-mini { position: absolute; top: 8px; right: -2px; width: 15px; height: 8px; background: var(--visor); border: 2px solid #000; border-radius: 5px; }
 
-        #meeting-ui { display: none; position: absolute; inset: 0; background: rgba(200,0,0,0.9); flex-direction: column; align-items: center; justify-content: center; z-index: 1200; }
+        #meeting { display: none; position: fixed; inset: 0; background: rgba(150,0,0,0.9); z-index: 2000; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
 
-    <div id="home-screen">
-        <div class="logo">Crewgle</div>
-        <input type="text" id="searchInput" class="search-box" placeholder="Search like a Crewmate..." autocomplete="off">
+<div id="home-screen">
+    <h1 style="font-size: 4rem;">Crewgle</h1>
+    <input type="text" id="s" class="search-box" placeholder="Search like a Crewmate..." autocomplete="off">
+</div>
+
+<div id="game-overlay">
+    <canvas id="c"></canvas>
+    <div id="joy"><div id="knob"></div></div>
+    <div id="meeting">
+        <h1>EMERGENCY MEETING</h1>
+        <button onclick="location.reload()" style="padding: 10px 20px;">Return to Ship</button>
     </div>
+</div>
 
-    <iframe id="results-frame"></iframe>
+<div class="nav">
+    <div class="crew" style="background:var(--red)" onclick="location.reload()"><div class="visor-mini"></div></div>
+    <div class="crew" style="background:#225ee1"><div class="visor-mini"></div></div>
+</div>
 
-    <div id="game-overlay">
-        <canvas id="gameCanvas"></canvas>
-        <div id="joystick-container"><div id="joystick-knob"></div></div>
-        <div id="meeting-ui">
-            <h1>EMERGENCY MEETING</h1>
-            <button onclick="exitGame()" style="padding: 15px 30px; margin-top: 20px;">Back to Search</button>
-        </div>
-    </div>
+<script>
+const input = document.getElementById('s');
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const joy = document.getElementById('joy');
+const knob = document.getElementById('knob');
 
-    <div class="nav">
-        <div class="crewmate red" onclick="goHome()"><div class="visor"></div></div>
-        <div class="crewmate blue"><div class="visor"></div></div>
-    </div>
+let player = { x: 200, y: 200, dx: 0, dy: 0, speed: 4 };
+let keys = {};
+let isMobile = 'ontouchstart' in window;
 
-    <script>
-        const input = document.getElementById('searchInput');
-        const home = document.getElementById('home-screen');
-        const frame = document.getElementById('results-frame');
-        const gameLayer = document.getElementById('game-overlay');
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const joyContainer = document.getElementById('joystick-container');
-        const joyKnob = document.getElementById('joystick-knob');
-
-        let isMobile = ('ontouchstart' in window);
-        let player = { x: 100, y: 100, size: 30, speed: 5, dx: 0, dy: 0 };
-        let keys = {};
-
-        // --- SEARCH LOGIC ---
-        input.addEventListener('keypress', (e) => {
-            if (e.key === "Enter") {
-                const val = input.value.trim();
-                if (val.toLowerCase() === "/play") {
-                    startMiniGame();
-                } else if (val !== "") {
-                    loadBing(val);
-                }
-            }
-        });
-
-        function loadBing(q) {
-            frame.src = `https://www.bing.com/search?q=${encodeURIComponent(q)}`;
-            home.style.transform = "translateY(-100%)";
-            setTimeout(() => { frame.style.display = "block"; home.style.display = "none"; }, 500);
+input.onkeypress = (e) => {
+    if(e.key === "Enter") {
+        if(input.value.toLowerCase() === "/play") {
+            document.getElementById('game-overlay').style.display = "block";
+            if(isMobile) joy.style.display = "block";
+            initGame();
+        } else {
+            window.location.href = "https://www.bing.com/search?q=" + encodeURIComponent(input.value);
         }
+    }
+}
 
-        function goHome() {
-            gameLayer.style.display = "none";
-            frame.style.display = "none";
-            home.style.display = "flex";
-            home.style.transform = "translateY(0)";
-            input.value = "";
-        }
+function initGame() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    loop();
+}
 
-        // --- GAME ENGINE ---
-        function startMiniGame() {
-            gameLayer.style.display = "block";
-            if(isMobile) joyContainer.style.display = "block";
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            player.x = canvas.width / 2;
-            player.y = canvas.height / 2;
-            gameLoop();
-        }
+window.onkeydown = (e) => keys[e.key] = true;
+window.onkeyup = (e) => keys[e.key] = false;
 
-        // Controls: PC
-        window.addEventListener('keydown', e => keys[e.key] = true);
-        window.addEventListener('keyup', e => keys[e.key] = false);
+// Mobile Joystick Logic
+if(isMobile) {
+    joy.ontouchmove = (e) => {
+        let t = e.touches[0];
+        let r = joy.getBoundingClientRect();
+        player.dx = (t.clientX - (r.left + 50)) / 10;
+        player.dy = (t.clientY - (r.top + 50)) / 10;
+        knob.style.transform = `translate(${player.dx*2}px, ${player.dy*2}px)`;
+    };
+    joy.ontouchend = () => { player.dx = 0; player.dy = 0; knob.style.transform = "translate(0,0)"; };
+}
 
-        // Controls: Mobile Joystick
-        if(isMobile) {
-            joyContainer.addEventListener('touchmove', (e) => {
-                let touch = e.touches[0];
-                let rect = joyContainer.getBoundingClientRect();
-                let centerX = rect.left + rect.width/2;
-                let centerY = rect.top + rect.height/2;
-                player.dx = (touch.clientX - centerX) / 10;
-                player.dy = (touch.clientY - centerY) / 10;
-                joyKnob.style.transform = `translate(${player.dx*2}px, ${player.dy*2}px)`;
-            });
-            joyContainer.addEventListener('touchend', () => {
-                player.dx = 0; player.dy = 0;
-                joyKnob.style.transform = `translate(0px, 0px)`;
-            });
-        }
+function drawMap() {
+    // Space Background (Fixes the White Screen)
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        function gameLoop() {
-            if (gameLayer.style.display === "none") return;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw Table/Button
-            ctx.fillStyle = "red";
-            ctx.beginPath(); ctx.arc(canvas.width/2, canvas.height/2, 40, 0, Math.PI*2); ctx.fill();
+    // Ship Floor
+    ctx.fillStyle = "#3e444e";
+    // Cafeteria
+    ctx.fillRect(100, 100, 400, 300);
+    // Hallway
+    ctx.fillRect(500, 200, 300, 100);
+    // Nav Room
+    ctx.fillRect(800, 150, 200, 200);
 
-            // Handle Movement
-            if (!isMobile) {
-                if (keys['ArrowUp'] || keys['w']) player.y -= player.speed;
-                if (keys['ArrowDown'] || keys['s']) player.y += player.speed;
-                if (keys['ArrowLeft'] || keys['a']) player.x -= player.speed;
-                if (keys['ArrowRight'] || keys['d']) player.x += player.speed;
-            } else {
-                player.x += player.dx;
-                player.y += player.dy;
-            }
+    // Emergency Button Table
+    ctx.fillStyle = "#2c313a";
+    ctx.beginPath(); ctx.arc(300, 250, 60, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = "red";
+    ctx.beginPath(); ctx.arc(300, 250, 20, 0, Math.PI*2); ctx.fill();
+}
 
-            // Draw Player
-            ctx.fillStyle = "#c51111";
-            ctx.fillRect(player.x - 15, player.y - 20, 30, 40);
-            ctx.fillStyle = "#83d5e6"; 
-            ctx.fillRect(player.x, player.y - 15, 15, 10);
+function loop() {
+    drawMap();
 
-            // Button Interaction
-            let dist = Math.hypot(player.x - canvas.width/2, player.y - canvas.height/2);
-            if (dist < 50) {
-                ctx.fillStyle = "white";
-                ctx.fillText(isMobile ? "TAP TO CALL" : "PRESS E TO CALL", canvas.width/2 - 30, canvas.height/2 - 50);
-                if(keys['e']) document.getElementById('meeting-ui').style.display = "flex";
-            }
+    // Movement PC
+    if(!isMobile) {
+        if(keys.ArrowUp || keys.w) player.y -= player.speed;
+        if(keys.ArrowDown || keys.s) player.y += player.speed;
+        if(keys.ArrowLeft || keys.a) player.x -= player.speed;
+        if(keys.ArrowRight || keys.d) player.x += player.speed;
+    } else {
+        player.x += player.dx;
+        player.y += player.dy;
+    }
 
-            requestAnimationFrame(gameLoop);
-        }
+    // Draw Crewmate
+    ctx.fillStyle = "red";
+    ctx.fillRect(player.x - 15, player.y - 20, 30, 40);
+    ctx.fillStyle = "#83d5e6";
+    ctx.fillRect(player.x, player.y - 15, 15, 10);
 
-        function exitGame() {
-            document.getElementById('meeting-ui').style.display = "none";
-            goHome();
-        }
-        
-        // Mobile tap on button
-        canvas.addEventListener('touchstart', (e) => {
-            let dist = Math.hypot(player.x - canvas.width/2, player.y - canvas.height/2);
-            if (dist < 50) document.getElementById('meeting-ui').style.display = "flex";
-        });
-    </script>
+    // Interaction
+    let d = Math.hypot(player.x - 300, player.y - 250);
+    if(d < 50) {
+        ctx.fillStyle = "white";
+        ctx.fillText("TAP SCREEN / PRESS E", 250, 180);
+        if(keys.e) document.getElementById('meeting').style.display = "flex";
+    }
+
+    requestAnimationFrame(loop);
+}
+
+canvas.onclick = () => {
+    let d = Math.hypot(player.x - 300, player.y - 250);
+    if(d < 50) document.getElementById('meeting').style.display = "flex";
+}
+</script>
 </body>
 </html>
