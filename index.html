@@ -3,144 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Crewgle</title>
+    <title>Crewgle | Independent</title>
     <style>
-        * { box-sizing: border-box; }
-        body { 
-            margin: 0; padding: 0; 
-            background: #000; color: white; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            height: 100vh; width: 100vw; overflow: hidden;
-        }
-
-        /* Search UI */
-        #search-ui {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            height: 100vh; width: 100%; transition: transform 0.6s cubic-bezier(0.15, 0.85, 0.35, 1);
-        }
-        .logo { font-size: 4.5rem; font-weight: 900; letter-spacing: -2px; margin-bottom: 20px; color: #fff; }
-        input { 
-            width: 85%; max-width: 500px; padding: 18px 25px; 
-            border-radius: 50px; border: none; font-size: 1.2rem; 
-            outline: none; background: #fff; color: #000;
-        }
-
-        /* Game Layer */
-        #game-layer { 
-            display: none; position: fixed; inset: 0; z-index: 100; background: #000; 
-        }
-        canvas { display: block; }
-
-        /* Mobile Joystick */
-        #joy-base {
-            position: fixed; bottom: 50px; left: 50px; width: 100px; height: 100px;
-            background: rgba(255,255,255,0.1); border-radius: 50%; display: none; z-index: 200;
-        }
-        #joy-knob {
-            position: absolute; top: 25px; left: 25px; width: 50px; height: 50px;
-            background: rgba(255,255,255,0.4); border-radius: 50%;
-        }
+        body, html { margin: 0; padding: 0; background: #000; color: white; overflow: hidden; font-family: sans-serif; }
+        #ui { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        input { width: 80%; max-width: 400px; padding: 15px; border-radius: 25px; border: none; font-size: 1.2rem; outline: none; }
+        
+        #game-layer { display: none; position: fixed; inset: 0; background: #000; }
+        #task-bar { position: fixed; top: 20px; left: 20px; width: 200px; height: 20px; background: #333; border: 2px solid #fff; z-index: 1000; }
+        #task-progress { width: 0%; height: 100%; background: #00ff00; transition: 0.3s; }
+        #task-label { position: fixed; top: 45px; left: 20px; font-size: 0.8rem; color: #0f0; }
+        
+        #win-screen { display: none; position: fixed; inset: 0; background: rgba(0,255,0,0.8); z-index: 2000; flex-direction: column; align-items: center; justify-content: center; color: black; }
+        #joy { position: fixed; bottom: 40px; left: 40px; width: 80px; height: 80px; background: rgba(255,255,255,0.2); border-radius: 50%; display: none; }
     </style>
 </head>
 <body>
 
-    <div id="search-ui">
-        <div class="logo">Crewgle</div>
-        <input type="text" id="q" placeholder="Search like a Crewmate..." autocomplete="off">
+<div id="ui">
+    <h1 style="font-size: 3rem;">Crewgle</h1>
+    <input type="text" id="q" placeholder="Search like a Crewmate..." autocomplete="off">
+</div>
+
+<div id="game-layer">
+    <div id="task-bar"><div id="task-progress"></div></div>
+    <div id="task-label">Tasks: 0/3 Completed</div>
+    <canvas id="c"></canvas>
+    <div id="joy"></div>
+    <div id="win-screen">
+        <h1>VICTORY</h1>
+        <p>All Tasks Completed!</p>
+        <button onclick="location.reload()" style="padding: 10px 20px; cursor: pointer;">Return to Crewgle</button>
     </div>
+</div>
 
-    <div id="game-layer">
-        <canvas id="c"></canvas>
-        <div id="joy-base"><div id="joy-knob"></div></div>
-    </div>
+<script>
+const q = document.getElementById('q');
+const gl = document.getElementById('game-layer');
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
 
-    <script>
-        const q = document.getElementById('q');
-        const ui = document.getElementById('search-ui');
-        const gl = document.getElementById('game-layer');
-        const canvas = document.getElementById('c');
-        const ctx = canvas.getContext('2d');
-        const joyBase = document.getElementById('joy-base');
-        const joyKnob = document.getElementById('joy-knob');
+let player = { x: 400, y: 300, speed: 5 };
+let tasks = { count: 0, total: 3, done: [false, false, false] };
+let statues = [
+    { x: 150, y: 150, color: 'blue' },
+    { x: 650, y: 450, color: 'pink' },
+    { x: 150, y: 450, color: 'orange' }
+];
 
-        let player = { x: 200, y: 200, size: 20, speed: 5, color: '#c51111' };
-        let moveX = 0, moveY = 0;
-        let keys = {};
-        let isMobile = 'ontouchstart' in window;
-
-        // Command Listener
-        q.addEventListener('keypress', (e) => {
-            if (e.key === "Enter") {
-                let val = q.value.toLowerCase().trim();
-                if (val === "/play") {
-                    ui.style.display = "none";
-                    gl.style.display = "block";
-                    if(isMobile) joyBase.style.display = "block";
-                    start();
-                } else if (val !== "") {
-                    window.location.href = "https://www.bing.com/search?q=" + encodeURIComponent(val);
-                }
-            }
-        });
-
-        function start() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+q.addEventListener('keypress', (e) => {
+    if (e.key === "Enter") {
+        if (q.value.toLowerCase().trim() === "/play") {
+            document.getElementById('ui').style.display = "none";
+            gl.style.display = "block";
+            if('ontouchstart' in window) document.getElementById('joy').style.display = "block";
+            resize();
             requestAnimationFrame(loop);
+        } else {
+            window.location.href = "https://www.bing.com/search?q=" + encodeURIComponent(q.value);
         }
+    }
+});
 
-        // Controls
-        window.onkeydown = (e) => keys[e.key.toLowerCase()] = true;
-        window.onkeyup = (e) => keys[e.key.toLowerCase()] = false;
+function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+window.onresize = resize;
 
-        if(isMobile) {
-            joyBase.addEventListener('touchmove', (e) => {
-                let touch = e.touches[0];
-                let rect = joyBase.getBoundingClientRect();
-                moveX = (touch.clientX - (rect.left + 50)) / 10;
-                moveY = (touch.clientY - (rect.top + 50)) / 10;
-                joyKnob.style.transform = `translate(${moveX * 2}px, ${moveY * 2}px)`;
-            });
-            joyBase.addEventListener('touchend', () => {
-                moveX = 0; moveY = 0;
-                joyKnob.style.transform = `translate(0,0)`;
-            });
+function drawMap() {
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // DRAW ROOMS
+    ctx.fillStyle = "#3e444e";
+    ctx.fillRect(100, 100, 600, 400); // Main Ship Deck
+    
+    // Draw Task Areas (Yellow Boxes)
+    ctx.fillStyle = "yellow";
+    if(!tasks.done[0]) ctx.fillRect(120, 120, 30, 30); // Task 1 (Medbay)
+    if(!tasks.done[1]) ctx.fillRect(650, 450, 30, 30); // Task 2 (Nav)
+    if(!tasks.done[2]) ctx.fillRect(120, 450, 30, 30); // Task 3 (Electrical)
+
+    // DRAW STATUES
+    statues.forEach(s => {
+        ctx.fillStyle = s.color;
+        ctx.fillRect(s.x, s.y, 20, 30); // The "Statue" crewmates
+        ctx.fillStyle = "#83d5e6"; ctx.fillRect(s.x + 10, s.y + 5, 8, 5);
+    });
+
+    // Emergency Table
+    ctx.fillStyle = "#2c313a";
+    ctx.beginPath(); ctx.arc(400, 300, 40, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = "red";
+    ctx.beginPath(); ctx.arc(400, 300, 12, 0, Math.PI*2); ctx.fill();
+}
+
+let keys = {};
+window.onkeydown = (e) => keys[e.key.toLowerCase()] = true;
+window.onkeyup = (e) => keys[e.key.toLowerCase()] = false;
+
+function loop() {
+    drawMap();
+
+    if(keys['w'] || keys['arrowup']) player.y -= player.speed;
+    if(keys['s'] || keys['arrowdown']) player.y += player.speed;
+    if(keys['a'] || keys['arrowleft']) player.x -= player.speed;
+    if(keys['d'] || keys['arrowright']) player.x += player.speed;
+
+    // Task Logic
+    const taskCoords = [{x:120,y:120}, {x:650,y:450}, {x:120,y:450}];
+    taskCoords.forEach((tc, i) => {
+        if(!tasks.done[i] && Math.hypot(player.x - tc.x, player.y - tc.y) < 30) {
+            tasks.done[i] = true;
+            tasks.count++;
+            document.getElementById('task-progress').style.width = (tasks.count/tasks.total * 100) + "%";
+            document.getElementById('task-label').innerText = `Tasks: ${tasks.count}/3 Completed`;
         }
+    });
 
-        function loop() {
-            // Draw Map
-            ctx.fillStyle = "#000"; // Clear screen with black
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if(tasks.count === tasks.total) document.getElementById('win-screen').style.display = "flex";
 
-            // Ship Floor (Skeld style)
-            ctx.fillStyle = "#3e444e";
-            ctx.fillRect(100, 100, 400, 300); // Cafeteria
-            ctx.fillRect(500, 200, 300, 100); // Hallway
-            
-            // Emergency Button Table
-            ctx.fillStyle = "#2c313a";
-            ctx.beginPath(); ctx.arc(300, 250, 60, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = "#c51111";
-            ctx.beginPath(); ctx.arc(300, 250, 20, 0, Math.PI*2); ctx.fill();
+    // Draw Player
+    ctx.fillStyle = "red";
+    ctx.fillRect(player.x - 10, player.y - 15, 20, 30);
+    ctx.fillStyle = "#83d5e6"; ctx.fillRect(player.x + 2, player.y - 10, 10, 8);
 
-            // Player Movement
-            if(!isMobile) {
-                if(keys['w'] || keys['arrowup']) player.y -= player.speed;
-                if(keys['s'] || keys['arrowdown']) player.y += player.speed;
-                if(keys['a'] || keys['arrowleft']) player.x -= player.speed;
-                if(keys['d'] || keys['arrowright']) player.x += player.speed;
-            } else {
-                player.x += moveX; player.y += moveY;
-            }
-
-            // Draw Character
-            ctx.fillStyle = player.color;
-            ctx.fillRect(player.x - 15, player.y - 20, 30, 40); // Body
-            ctx.fillStyle = "#83d5e6";
-            ctx.fillRect(player.x, player.y - 15, 15, 10); // Visor
-
-            requestAnimationFrame(loop);
-        }
-    </script>
+    requestAnimationFrame(loop);
+}
+</script>
 </body>
 </html>
