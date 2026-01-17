@@ -3,131 +3,170 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Crewgle | Independent</title>
+    <title>Crewgle | The Skeld</title>
     <style>
-        body, html { margin: 0; padding: 0; background: #000; color: white; overflow: hidden; font-family: sans-serif; }
+        :root { --red: #c51111; --blue: #132ed1; --visor: #83d5e6; --gold: #ffd700; }
+        body, html { margin: 0; padding: 0; background: #000; color: white; overflow: hidden; font-family: sans-serif; height: 100%; }
+
+        /* Search UI */
         #ui { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
-        input { width: 80%; max-width: 400px; padding: 15px; border-radius: 25px; border: none; font-size: 1.2rem; outline: none; }
+        .logo { font-size: 4rem; font-weight: bold; margin-bottom: 20px; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+        input { width: 80%; max-width: 400px; padding: 15px; border-radius: 30px; border: none; font-size: 1.1rem; outline: none; text-align: center; }
+
+        /* Game Layer */
+        #game-layer { display: none; position: fixed; inset: 0; background: #000; z-index: 100; }
+        #task-ui { position: fixed; top: 20px; left: 20px; z-index: 200; pointer-events: none;}
+        .bar-bg { width: 200px; height: 15px; background: #333; border: 2px solid #fff; border-radius: 5px; }
+        #bar-fill { width: 0%; height: 100%; background: #0f0; transition: 0.3s; }
+
+        /* Emergency Meeting */
+        #meeting { display: none; position: fixed; inset: 0; background: rgba(197, 17, 17, 0.95); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
         
-        #game-layer { display: none; position: fixed; inset: 0; background: #000; }
-        #task-bar { position: fixed; top: 20px; left: 20px; width: 200px; height: 20px; background: #333; border: 2px solid #fff; z-index: 1000; }
-        #task-progress { width: 0%; height: 100%; background: #00ff00; transition: 0.3s; }
-        #task-label { position: fixed; top: 45px; left: 20px; font-size: 0.8rem; color: #0f0; }
-        
-        #win-screen { display: none; position: fixed; inset: 0; background: rgba(0,255,0,0.8); z-index: 2000; flex-direction: column; align-items: center; justify-content: center; color: black; }
-        #joy { position: fixed; bottom: 40px; left: 40px; width: 80px; height: 80px; background: rgba(255,255,255,0.2); border-radius: 50%; display: none; }
+        /* Nav Crewmates */
+        .nav { position: fixed; bottom: 20px; width: 100%; display: flex; justify-content: space-around; z-index: 1000; }
+        .btn-crew { width: 50px; height: 65px; position: relative; cursor: pointer; }
+        .body-shape { width: 100%; height: 100%; border-radius: 20px 20px 10px 10px; border: 3px solid #000; }
+        .backpack { position: absolute; left: -10px; top: 15px; width: 15px; height: 35px; border: 3px solid #000; border-radius: 5px; }
+        .visor-shape { position: absolute; top: 12px; right: 5px; width: 30px; height: 15px; background: var(--visor); border: 3px solid #000; border-radius: 10px; }
+
+        #win { display: none; position: fixed; inset: 0; background: rgba(0,255,0,0.9); z-index: 4000; flex-direction: column; align-items: center; justify-content: center; color: #000; }
     </style>
 </head>
 <body>
 
 <div id="ui">
-    <h1 style="font-size: 3rem;">Crewgle</h1>
+    <div class="logo">Crewgle</div>
     <input type="text" id="q" placeholder="Search like a Crewmate..." autocomplete="off">
 </div>
 
 <div id="game-layer">
-    <div id="task-bar"><div id="task-progress"></div></div>
-    <div id="task-label">Tasks: 0/3 Completed</div>
-    <canvas id="c"></canvas>
-    <div id="joy"></div>
-    <div id="win-screen">
-        <h1>VICTORY</h1>
-        <p>All Tasks Completed!</p>
-        <button onclick="location.reload()" style="padding: 10px 20px; cursor: pointer;">Return to Crewgle</button>
+    <div id="task-ui">
+        <div class="bar-bg"><div id="bar-fill"></div></div>
+        <p id="task-text" style="margin-top:5px; color:#0f0;">Tasks: 0/4</p>
     </div>
+    <canvas id="canvas"></canvas>
+    
+    <div id="meeting">
+        <h1 style="font-size: 4rem;">EMERGENCY MEETING</h1>
+        <p>No Imposters detected. Statue is safe.</p>
+        <button onclick="closeMeeting()" style="padding: 15px 30px; margin-top: 20px; font-size: 1.2rem; cursor: pointer;">Resume Mission</button>
+    </div>
+
+    <div id="win"><h1>VICTORY</h1><p>The Ship is Optimized!</p><button onclick="location.reload()">Return Home</button></div>
+</div>
+
+<div class="nav">
+    <div class="btn-crew" onclick="location.reload()"><div class="backpack" style="background:var(--red)"></div><div class="body-shape" style="background:var(--red)"></div><div class="visor-shape"></div></div>
+    <div class="btn-crew"><div class="backpack" style="background:var(--blue)"></div><div class="body-shape" style="background:var(--blue)"></div><div class="visor-shape"></div></div>
 </div>
 
 <script>
-const q = document.getElementById('q');
-const gl = document.getElementById('game-layer');
-const canvas = document.getElementById('c');
-const ctx = canvas.getContext('2d');
-
-let player = { x: 400, y: 300, speed: 5 };
-let tasks = { count: 0, total: 3, done: [false, false, false] };
-let statues = [
-    { x: 150, y: 150, color: 'blue' },
-    { x: 650, y: 450, color: 'pink' },
-    { x: 150, y: 450, color: 'orange' }
-];
-
-q.addEventListener('keypress', (e) => {
-    if (e.key === "Enter") {
-        if (q.value.toLowerCase().trim() === "/play") {
-            document.getElementById('ui').style.display = "none";
-            gl.style.display = "block";
-            if('ontouchstart' in window) document.getElementById('joy').style.display = "block";
-            resize();
-            requestAnimationFrame(loop);
-        } else {
-            window.location.href = "https://www.bing.com/search?q=" + encodeURIComponent(q.value);
-        }
-    }
-});
-
-function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-window.onresize = resize;
-
-function drawMap() {
-    ctx.fillStyle = "#000";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // DRAW ROOMS
-    ctx.fillStyle = "#3e444e";
-    ctx.fillRect(100, 100, 600, 400); // Main Ship Deck
+    const q = document.getElementById('q');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
     
-    // Draw Task Areas (Yellow Boxes)
-    ctx.fillStyle = "yellow";
-    if(!tasks.done[0]) ctx.fillRect(120, 120, 30, 30); // Task 1 (Medbay)
-    if(!tasks.done[1]) ctx.fillRect(650, 450, 30, 30); // Task 2 (Nav)
-    if(!tasks.done[2]) ctx.fillRect(120, 450, 30, 30); // Task 3 (Electrical)
+    let player = { x: 400, y: 300, speed: 6 };
+    let tasks = { count: 0, total: 4, done: [false, false, false, false] };
+    let keys = {};
 
-    // DRAW STATUES
-    statues.forEach(s => {
-        ctx.fillStyle = s.color;
-        ctx.fillRect(s.x, s.y, 20, 30); // The "Statue" crewmates
-        ctx.fillStyle = "#83d5e6"; ctx.fillRect(s.x + 10, s.y + 5, 8, 5);
-    });
-
-    // Emergency Table
-    ctx.fillStyle = "#2c313a";
-    ctx.beginPath(); ctx.arc(400, 300, 40, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = "red";
-    ctx.beginPath(); ctx.arc(400, 300, 12, 0, Math.PI*2); ctx.fill();
-}
-
-let keys = {};
-window.onkeydown = (e) => keys[e.key.toLowerCase()] = true;
-window.onkeyup = (e) => keys[e.key.toLowerCase()] = false;
-
-function loop() {
-    drawMap();
-
-    if(keys['w'] || keys['arrowup']) player.y -= player.speed;
-    if(keys['s'] || keys['arrowdown']) player.y += player.speed;
-    if(keys['a'] || keys['arrowleft']) player.x -= player.speed;
-    if(keys['d'] || keys['arrowright']) player.x += player.speed;
-
-    // Task Logic
-    const taskCoords = [{x:120,y:120}, {x:650,y:450}, {x:120,y:450}];
-    taskCoords.forEach((tc, i) => {
-        if(!tasks.done[i] && Math.hypot(player.x - tc.x, player.y - tc.y) < 30) {
-            tasks.done[i] = true;
-            tasks.count++;
-            document.getElementById('task-progress').style.width = (tasks.count/tasks.total * 100) + "%";
-            document.getElementById('task-label').innerText = `Tasks: ${tasks.count}/3 Completed`;
+    // Command Activation
+    q.onkeypress = (e) => {
+        if(e.key === "Enter") {
+            let val = q.value.toLowerCase().trim();
+            if(val === "/play") {
+                document.getElementById('ui').style.display = "none";
+                document.getElementById('game-layer').style.display = "block";
+                resize();
+                loop();
+            } else {
+                window.location.href = "https://www.bing.com/search?q=" + encodeURIComponent(val);
+            }
         }
-    });
+    };
 
-    if(tasks.count === tasks.total) document.getElementById('win-screen').style.display = "flex";
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    window.onresize = resize;
+    window.onkeydown = (e) => keys[e.key.toLowerCase()] = true;
+    window.onkeyup = (e) => keys[e.key.toLowerCase()] = false;
 
-    // Draw Player
-    ctx.fillStyle = "red";
-    ctx.fillRect(player.x - 10, player.y - 15, 20, 30);
-    ctx.fillStyle = "#83d5e6"; ctx.fillRect(player.x + 2, player.y - 10, 10, 8);
+    function closeMeeting() { document.getElementById('meeting').style.display = "none"; }
 
-    requestAnimationFrame(loop);
-}
+    function drawCrew(x, y, color, isMovingLeft) {
+        ctx.strokeStyle = "black"; ctx.lineWidth = 4; ctx.fillStyle = color;
+        // Backpack
+        ctx.fillRect(isMovingLeft ? x + 10 : x - 22, y - 5, 12, 25);
+        ctx.strokeRect(isMovingLeft ? x + 10 : x - 22, y - 5, 12, 25);
+        // Body
+        ctx.beginPath();
+        ctx.roundRect(x - 15, y - 20, 30, 40, [15, 15, 5, 5]);
+        ctx.fill(); ctx.stroke();
+        // Visor
+        ctx.fillStyle = "#83d5e6";
+        ctx.beginPath();
+        ctx.roundRect(isMovingLeft ? x - 18 : x + 2, y - 12, 18, 10, 8);
+        ctx.fill(); ctx.stroke();
+    }
+
+    function loop() {
+        if(document.getElementById('meeting').style.display === "flex") return requestAnimationFrame(loop);
+        
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // MAP DESIGN (The Skeld Expanded)
+        ctx.fillStyle = "#3e444e";
+        ctx.fillRect(200, 150, 400, 300); // Cafeteria (Center)
+        ctx.fillRect(0, 225, 200, 150);   // MedBay (Left)
+        ctx.fillRect(600, 225, 200, 150); // Navigation (Right)
+        ctx.fillRect(325, 450, 150, 200); // Electrical (Bottom)
+        
+        // Hallways
+        ctx.fillRect(200, 275, 400, 50); // Horiz Hall
+        ctx.fillRect(375, 450, 50, 100); // Vert Hall
+
+        // The Golden Statue (Cafeteria Top Right)
+        drawCrew(550, 180, "var(--gold)", true);
+        ctx.fillStyle = "white"; ctx.font = "12px Arial";
+        ctx.fillText("GOLD STATUE", 520, 150);
+
+        // Emergency Table
+        ctx.fillStyle = "#2c313a";
+        ctx.beginPath(); ctx.arc(400, 300, 50, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "red";
+        ctx.beginPath(); ctx.arc(400, 300, 15, 0, Math.PI*2); ctx.fill();
+
+        // Tasks Locations
+        const taskPos = [{x:50,y:300}, {x:750,y:300}, {x:400,y:600}, {x:300,y:180}];
+        taskPos.forEach((p, i) => {
+            if(!tasks.done[i]) {
+                ctx.fillStyle = "yellow";
+                ctx.fillRect(p.x - 10, p.y - 10, 20, 20);
+                if(Math.hypot(player.x - p.x, player.y - p.y) < 30) {
+                    tasks.done[i] = true;
+                    tasks.count++;
+                    document.getElementById('bar-fill').style.width = (tasks.count/tasks.total * 100) + "%";
+                    document.getElementById('task-text').innerText = `Tasks: ${tasks.count}/4`;
+                }
+            }
+        });
+
+        // Movement
+        let ml = keys['a'] || keys['arrowleft'];
+        if(keys['w'] || keys['arrowup']) player.y -= player.speed;
+        if(keys['s'] || keys['arrowdown']) player.y += player.speed;
+        if(ml) player.x -= player.speed;
+        if(keys['d'] || keys['arrowright']) player.x += player.speed;
+
+        // Emergency Button Action
+        if(Math.hypot(player.x - 400, player.y - 300) < 40 && keys['e']) {
+            document.getElementById('meeting').style.display = "flex";
+            keys['e'] = false;
+        }
+
+        drawCrew(player.x, player.y, "#c51111", ml);
+        if(tasks.count === tasks.total) document.getElementById('win').style.display = "flex";
+        requestAnimationFrame(loop);
+    }
 </script>
 </body>
 </html>
