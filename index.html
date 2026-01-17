@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crewgle</title>
+    <style>
+        :root {
+            --bg-color: #0b111e;
+            --card-bg: #ffffff;
+            --text-main: #ffffff;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden;
+        }
+
+        /* Main Container */
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            text-align: center;
+        }
+
+        /* Logo Styling */
+        .logo {
+            font-size: 3.5rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            letter-spacing: -2px;
+        }
+        .c { color: #4285F4; }
+        .r { color: #EA4335; }
+        .e { color: #FBBC05; }
+        .w { color: #34A853; }
+        .g { color: #4285F4; }
+        .l { color: #EA4335; }
+        .ee { color: #FBBC05; }
+
+        /* Search Bar */
+        .search-box {
+            width: 80%;
+            max-width: 500px;
+            padding: 15px 25px;
+            border-radius: 25px;
+            border: none;
+            font-size: 1.1rem;
+            margin-bottom: 25px;
+            background: #e8f0fe;
+        }
+
+        /* Buttons Grid */
+        .button-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            width: 80%;
+            max-width: 500px;
+        }
+
+        .btn {
+            background: white;
+            color: black;
+            padding: 12px;
+            border-radius: 12px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            box-shadow: 0 4px 0px #ccc;
+            cursor: pointer;
+        }
+
+        /* Results Overlay Section */
+        #results-section {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: calc(100% - 80px); /* Leave room for crewmates */
+            background: white;
+            display: none; /* Hidden by default */
+            border: none;
+        }
+
+        /* Bottom Navigation Area */
+        .nav-bar {
+            position: fixed;
+            bottom: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 30px;
+            box-sizing: border-box;
+            pointer-events: none; /* Allows clicking through the empty space */
+        }
+
+        .crewmate {
+            width: 60px;
+            height: 80px;
+            border-radius: 25px 25px 10px 10px;
+            position: relative;
+            pointer-events: auto;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .crewmate:hover { transform: scale(1.1); }
+
+        /* Blue Crewmate (Decoration/Right) */
+        .blue { background: #225ee1; }
+        /* Red Crewmate (Home/Left) */
+        .red { background: #c51111; }
+
+        /* Visor */
+        .visor {
+            position: absolute;
+            top: 15px;
+            left: 10px;
+            width: 45px;
+            height: 25px;
+            background: #83d5e6;
+            border-radius: 15px;
+            border: 3px solid #000;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="home-screen" class="container">
+        <div class="logo">
+            <span class="c">C</span><span class="r">r</span><span class="e">e</span> <span class="w">w</span><span class="g">g</span><span class="l">l</span><span class="ee">e</span>
+        </div>
+
+        <input type="text" id="searchInput" class="search-box" placeholder="Search like a crewmate..." onkeypress="handleSearch(event)">
+
+        <div class="button-grid">
+            <div class="btn" onclick="quickSearch('google')">Google</div>
+            <div class="btn" onclick="quickSearch('bing')">Bing</div>
+            <div class="btn" onclick="quickSearch('youtube')">Videos</div>
+            <div class="btn" onclick="quickSearch('reddit')">Discuss</div>
+        </div>
+    </div>
+
+    <iframe id="results-section" src=""></iframe>
+
+    <div class="nav-bar">
+        <div class="crewmate red" onclick="goHome()">
+            <div class="visor"></div>
+        </div>
+
+        <div class="crewmate blue">
+            <div class="visor"></div>
+        </div>
+    </div>
+
+    <script>
+        const homeScreen = document.getElementById('home-screen');
+        const resultsSection = document.getElementById('results-section');
+        const searchInput = document.getElementById('searchInput');
+
+        function handleSearch(event) {
+            if (event.key === "Enter") {
+                showResults(`https://www.google.com/search?q=${searchInput.value}&igu=1`);
+            }
+        }
+
+        function quickSearch(type) {
+            let url = "";
+            let query = searchInput.value || "Among Us";
+            
+            if(type === 'google') url = `https://www.google.com/search?q=${query}&igu=1`;
+            if(type === 'bing') url = `https://www.bing.com/search?q=${query}`;
+            if(type === 'youtube') url = `https://www.youtube.com/results?search_query=${query}`;
+            if(type === 'reddit') url = `https://www.reddit.com/search/?q=${query}`;
+
+            showResults(url);
+        }
+
+        function showResults(url) {
+            resultsSection.src = url;
+            resultsSection.style.display = "block";
+            homeScreen.style.display = "none";
+        }
+
+        function goHome() {
+            resultsSection.style.display = "none";
+            homeScreen.style.display = "flex";
+            resultsSection.src = "";
+        }
+    </script>
+</body>
+</html>
