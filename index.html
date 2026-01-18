@@ -3,69 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Crewgle | Fixed</title>
+    <title>Crewgle | Imposter Edition</title>
     <style>
-        :root { --red: #c51111; --visor: #83d5e6; --gold: #ffd700; }
+        :root { --red: #c51111; --blue: #132ed1; --visor: #83d5e6; }
         * { touch-action: none; user-select: none; box-sizing: border-box; }
         body, html { margin: 0; padding: 0; background: #000; color: white; height: 100%; width: 100%; font-family: sans-serif; overflow: hidden; }
 
         /* Search Screen */
         #ui { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
-        .logo { font-size: 4rem; font-weight: bold; margin-bottom: 20px; }
-        #q { width: 85%; max-width: 500px; padding: 18px; border-radius: 50px; border: none; font-size: 1.2rem; text-align: center; outline: none; }
+        input { width: 85%; max-width: 500px; padding: 18px; border-radius: 50px; border: none; text-align: center; font-size: 1.2rem; }
 
-        /* Game Layer */
+        /* Game Layers */
         #game { display: none; position: fixed; inset: 0; z-index: 100; background: #000; }
-        
-        /* Landscape Warning - Only in Game */
-        #rotate-box {
-            display: none; position: absolute; inset: 0; background: #000; z-index: 9999;
-            flex-direction: column; align-items: center; justify-content: center; text-align: center;
-        }
+        #rotate-box { display: none; position: absolute; inset: 0; background: #000; z-index: 9999; flex-direction: column; align-items: center; justify-content: center; }
         @media screen and (orientation: portrait) { #game #rotate-box { display: flex; } }
 
+        /* HUD */
         #task-ui { position: fixed; top: 15px; left: 15px; z-index: 1000; }
         .bar { width: 150px; height: 12px; background: #222; border: 2px solid #fff; border-radius: 6px; }
         #fill { width: 0%; height: 100%; background: #0f0; transition: 0.3s; }
+        #pause-btn { position: fixed; top: 15px; right: 15px; z-index: 1000; background: rgba(255,255,255,0.2); border: 1px solid #fff; color: #fff; padding: 10px; border-radius: 5px; }
 
-        /* Task Modals */
+        /* Modals */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9000; flex-direction: column; align-items: center; justify-content: center; }
         .panel { background: #333; padding: 25px; border: 4px solid #777; border-radius: 15px; text-align: center; }
-        #key-display { background: #000; color: #0f0; font-family: monospace; font-size: 1.8rem; margin-bottom: 10px; padding: 5px; border: 1px solid #555; height: 40px; }
-        .grid { display: grid; grid-template-columns: repeat(3, 50px); gap: 10px; justify-content: center; }
-        .key { background: #555; padding: 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        
+        /* Game Over Screens */
+        #victory, #defeat, #pause-menu { display: none; position: fixed; inset: 0; z-index: 10000; flex-direction: column; align-items: center; justify-content: center; background: #000; }
+        #defeat { border: 10px solid #f00; color: #f00; }
+        #victory { border: 10px solid #0f0; color: #0f0; }
 
-        /* Controls */
-        #joy { position: fixed; bottom: 30px; left: 30px; width: 100px; height: 100px; background: rgba(255,255,255,0.1); border: 2px solid #fff; border-radius: 50%; z-index: 5000; }
+        #joy { position: fixed; bottom: 30px; left: 30px; width: 100px; height: 100px; background: rgba(255,255,255,0.15); border: 2px solid #fff; border-radius: 50%; z-index: 5000; }
         #knob { position: absolute; top: 25px; left: 25px; width: 50px; height: 50px; background: #fff; border-radius: 50%; }
-        #win { display: none; position: fixed; inset: 0; z-index: 9500; background: #0f0; color: #000; flex-direction: column; align-items: center; justify-content: center; }
+        button { padding: 12px 30px; margin-top: 20px; cursor: pointer; border-radius: 8px; border: none; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div id="ui">
-    <div class="logo">Crewgle</div>
-    <input type="text" id="q" placeholder="Search or type /play..." autocomplete="off">
+    <h1 style="font-size: 4rem; margin-bottom: 20px;">Crewgle</h1>
+    <input type="text" id="q" placeholder="Type /play..." autocomplete="off">
 </div>
 
 <div id="game">
-    <div id="rotate-box"><h1>🔄 ROTATE PHONE</h1><p>Mission requires landscape mode.</p></div>
-    <div id="task-ui"><div class="bar"><div id="fill"></div></div><div id="stat" style="color:#0f0; font-size:14px; margin-top:5px;">TASKS: 0/2</div></div>
+    <div id="rotate-box"><h1>🔄 ROTATE TO LANDSCAPE</h1></div>
+    <div id="task-ui">
+        <div class="bar"><div id="fill"></div></div>
+        <div id="stat" style="color:#0f0; margin-top:5px; font-size:12px;">TASKS: 0/1</div>
+    </div>
+    <button id="pause-btn" onclick="pauseGame()">PAUSE</button>
     <canvas id="c"></canvas>
     <div id="joy"><div id="knob"></div></div>
-
-    <div id="modal-o2" class="modal">
-        <div class="panel"><h3>O2 CODE: 1234</h3><div id="key-display">____</div>
-            <div class="grid">
-                <div class="key" onclick="pressKey(1)">1</div><div class="key" onclick="pressKey(2)">2</div><div class="key" onclick="pressKey(3)">3</div>
-                <div class="key" onclick="pressKey(4)">4</div><div class="key" onclick="pressKey(5)">5</div><div class="key" onclick="pressKey(6)">6</div>
-                <div class="key" onclick="pressKey(7)">7</div><div class="key" onclick="pressKey(8)">8</div><div class="key" onclick="pressKey(9)">9</div>
-                <div></div><div class="key" onclick="pressKey(0)">0</div>
-            </div><button onclick="closeModals()" style="margin-top:10px">CANCEL</button>
-        </div>
-    </div>
-    <div id="win"><h1>VICTORY!</h1><button onclick="location.reload()">HOME</button></div>
 </div>
+
+<div id="pause-menu" class="modal">
+    <div class="panel">
+        <h1>GAME PAUSED</h1>
+        <button onclick="resumeGame()" style="background:#0f0;">RESUME</button>
+        <button onclick="location.reload()" style="background:#f00; color:#fff;">QUIT</button>
+    </div>
+</div>
+
+<div id="victory"><h1 style="font-size:5rem;">VICTORY</h1><button onclick="location.reload()">HOME</button></div>
+<div id="defeat"><h1 style="font-size:5rem;">DEFEAT</h1><p>The Imposter got you.</p><button onclick="location.reload()">TRY AGAIN</button></div>
 
 <script>
     const q = document.getElementById('q');
@@ -74,67 +74,45 @@
     const joy = document.getElementById('joy');
     const knob = document.getElementById('knob');
 
-    let player = { x: 0, y: 0, dx: 0, dy: 0, speed: 5, side: 1 };
-    let tasks = { count: 0, done: [false, false] };
-    let inMenu = false;
-    let keys = {}; // Track PC Keys
+    let player = { x: 0, y: 0, dx: 0, dy: 0, speed: 4.5, side: 1 };
+    let npc = { x: 100, y: 100, speed: 2.2, side: 1 }; // THE IMPOSTER
+    let tasks = { count: 0, total: 1, done: [false] };
+    let gameActive = false, paused = false;
+    let keys = {};
 
     q.addEventListener('keypress', (e) => {
-        if(e.key === "Enter") {
-            let val = q.value.toLowerCase().trim();
-            if(val === "/play") {
-                document.getElementById('ui').style.display = 'none';
-                document.getElementById('game').style.display = 'block';
-                resize();
-                player.x = c.width/2; player.y = c.height/2;
-                loop();
-            } else if (val !== "") {
-                window.location.href = "https://www.bing.com/search?q=" + encodeURIComponent(val);
-            }
+        if(e.key === "Enter" && q.value.trim() === "/play") {
+            document.getElementById('ui').style.display = 'none';
+            document.getElementById('game').style.display = 'block';
+            gameActive = true; resize();
+            player.x = c.width/2; player.y = c.height/2;
+            loop();
         }
     });
 
-    // PC CONTROLS
-    window.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; });
-    window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+    window.onkeydown = (e) => { keys[e.key.toLowerCase()] = true; if(e.key === "Escape") pauseGame(); };
+    window.onkeyup = (e) => keys[e.key.toLowerCase()] = false;
 
-    // O2 TASK LOGIC
-    let currentCode = "";
-    function pressKey(num) {
-        currentCode += num; document.getElementById('key-display').innerText = currentCode;
-        if(currentCode === "1234") { completeTask(0); closeModals(); }
-        else if(currentCode.length >= 4) { currentCode = ""; document.getElementById('key-display').innerText = "ERR"; }
-    }
+    function pauseGame() { paused = true; document.getElementById('pause-menu').style.display = 'flex'; }
+    function resumeGame() { paused = false; document.getElementById('pause-menu').style.display = 'none'; }
 
-    function completeTask(id) {
-        if(!tasks.done[id]) {
-            tasks.done[id] = true; tasks.count++;
-            document.getElementById('fill').style.width = (tasks.count/2 * 100) + '%';
-            document.getElementById('stat').innerText = `TASKS: ${tasks.count}/2`;
-            if(tasks.count === 2) document.getElementById('win').style.display = 'flex';
-        }
-    }
-
-    function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); inMenu = false; currentCode = ""; }
-
-    // JOYSTICK LOGIC
+    // Joystick
     function moveJoy(e) {
-        if(inMenu) return; e.preventDefault();
+        if(!gameActive || paused) return; e.preventDefault();
         let t = e.touches ? e.touches[0] : e;
         let r = joy.getBoundingClientRect();
         let dx = t.clientX - (r.left + 50), dy = t.clientY - (r.top + 50);
         let dist = Math.min(50, Math.hypot(dx, dy));
         let ang = Math.atan2(dy, dx);
-        player.dx = Math.cos(ang) * (dist / 8); player.dy = Math.sin(ang) * (dist / 8);
+        player.dx = Math.cos(ang) * (dist / 10); player.dy = Math.sin(ang) * (dist / 10);
         knob.style.transform = `translate(${Math.cos(ang)*dist}px, ${Math.sin(ang)*dist}px)`;
         player.side = player.dx < 0 ? -1 : 1;
     }
-    joy.addEventListener('touchstart', moveJoy);
     joy.addEventListener('touchmove', moveJoy, {passive: false});
     joy.addEventListener('touchend', () => { player.dx = 0; player.dy = 0; knob.style.transform = "translate(0,0)"; });
 
     function resize() { c.width = window.innerWidth; c.height = window.innerHeight; }
-    window.addEventListener('resize', resize);
+    window.onresize = resize;
 
     function drawCrew(x, y, color, side) {
         ctx.fillStyle = color; ctx.strokeStyle = "black"; ctx.lineWidth = 3;
@@ -143,31 +121,41 @@
     }
 
     function loop() {
-        if(inMenu) return requestAnimationFrame(loop);
-        ctx.fillStyle = "#000"; ctx.fillRect(0,0,c.width, c.height);
-        let mx = c.width/2, my = c.height/2;
+        if(!gameActive) return;
+        if(!paused) {
+            ctx.fillStyle = "#000"; ctx.fillRect(0,0,c.width, c.height);
+            let mx = c.width/2, my = c.height/2;
 
-        // Draw Map
-        ctx.fillStyle = "#3e444e"; ctx.fillRect(mx-200, my-150, 400, 300); // Cafeteria
-        ctx.fillStyle = "#115511"; ctx.fillRect(mx+200, my-50, 200, 100);  // O2
-        drawCrew(mx + 150, my - 120, "gold", 1); // Statue
+            // Map
+            ctx.fillStyle = "#3e444e"; ctx.fillRect(mx-250, my-180, 500, 360); 
+            // Emergency Button
+            ctx.fillStyle = "red"; ctx.beginPath(); ctx.arc(mx, my, 20, 0, Math.PI*2); ctx.fill();
 
-        // Task Interaction
-        if(!tasks.done[0]) {
-            ctx.fillStyle = "yellow"; ctx.fillRect(mx+300, my-10, 20, 20);
-            if(Math.hypot(player.x-(mx+300), player.y-my) < 30) { inMenu = true; document.getElementById('modal-o2').style.display = 'flex'; }
+            // Move NPC (Follow Player)
+            let ang = Math.atan2(player.y - npc.y, player.x - npc.x);
+            npc.x += Math.cos(ang) * npc.speed;
+            npc.y += Math.sin(ang) * npc.speed;
+            npc.side = Math.cos(ang) < 0 ? -1 : 1;
+
+            // Player movement
+            if(keys['w']) player.y -= player.speed; if(keys['s']) player.y += player.speed;
+            if(keys['a']) { player.x -= player.speed; player.side = -1; }
+            if(keys['d']) { player.x += player.speed; player.side = 1; }
+            player.x += player.dx; player.y += player.dy;
+
+            // Collision Check (Imposter)
+            if(Math.hypot(player.x - npc.x, player.y - npc.y) < 30) {
+                gameActive = false; document.getElementById('defeat').style.display = 'flex';
+            }
+
+            // Emergency Check
+            if(Math.hypot(player.x - mx, player.y - my) < 30 && (keys['e'] || player.dx != 0)) {
+                // You could add a meeting popup here!
+            }
+
+            drawCrew(npc.x, npc.y, "blue", npc.side); // Draw Imposter
+            drawCrew(player.x, player.y, "red", player.side); // Draw Player
         }
-
-        // KEYBOARD MOVEMENT
-        if(keys['w'] || keys['arrowup']) player.y -= player.speed;
-        if(keys['s'] || keys['arrowdown']) player.y += player.speed;
-        if(keys['a'] || keys['arrowleft']) { player.x -= player.speed; player.side = -1; }
-        if(keys['d'] || keys['arrowright']) { player.x += player.speed; player.side = 1; }
-
-        // JOYSTICK MOVEMENT
-        player.x += player.dx; player.y += player.dy;
-
-        drawCrew(player.x, player.y, "red", player.side);
         requestAnimationFrame(loop);
     }
 </script>
