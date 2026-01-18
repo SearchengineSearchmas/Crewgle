@@ -9,185 +9,185 @@
         * { touch-action: none; user-select: none; box-sizing: border-box; }
         body, html { margin: 0; padding: 0; background: #000; color: white; height: 100%; width: 100%; font-family: sans-serif; overflow: hidden; }
 
-        /* Search Screen */
-        #search-box { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #000; z-index: 2000; }
-        .logo { font-size: 5rem; font-weight: bold; margin-bottom: 25px; background: linear-gradient(#fff, #444); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        #q { width: 85%; max-width: 580px; padding: 18px 25px; border-radius: 50px; border: 1px solid #333; background: #111; color: white; font-size: 1.1rem; outline: none; text-align: center; }
+        /* Search Interface */
+        #search-ui { position: absolute; inset: 0; display: flex; flex-direction: column; background: #000; z-index: 2000; }
+        #top-bar { padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; }
+        #q { width: 85%; max-width: 580px; padding: 15px 25px; border-radius: 50px; border: 1px solid #333; background: #111; color: white; font-size: 1.1rem; outline: none; }
+        #bing-frame { display: none; flex-grow: 1; border: none; background: white; }
 
-        /* Game Screen */
+        /* Game UI */
         #game { display: none; position: fixed; inset: 0; z-index: 100; background: #080808; outline: none; }
-        #exit { position: fixed; top: 15px; right: 15px; width: 45px; height: 45px; background: var(--red); color: white; border: 2px solid #fff; border-radius: 50%; cursor: pointer; z-index: 3000; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        #home-btn { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 100px; height: 40px; background: var(--red); color: white; border: 2px solid white; border-radius: 5px; font-weight: bold; cursor: pointer; z-index: 3000; }
         
-        #hud { position: fixed; top: 15px; left: 15px; pointer-events: none; z-index: 2000; font-size: 14px; color: #0f0; }
-        #joy { position: fixed; bottom: 40px; left: 40px; width: 100px; height: 100px; background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; }
-        #knob { position: absolute; top: 25px; left: 25px; width: 50px; height: 50px; background: #fff; border-radius: 50%; }
+        /* Tablets / Modals */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; }
+        .tablet { background: #333; padding: 20px; border: 8px solid #555; border-radius: 15px; text-align: center; width: 300px; }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px; }
+        .grid button { padding: 20px; font-size: 1.5rem; background: #444; color: #0f0; border: 2px solid #666; cursor: pointer; }
+        
+        #needle { width: 6px; height: 60px; background: #f00; position: absolute; bottom: 50%; left: calc(50% - 3px); transform-origin: bottom; transform: rotate(90deg); }
     </style>
 </head>
 <body>
 
-<div id="search-box">
-    <div class="logo">Crewgle</div>
-    <input type="text" id="q" placeholder="Search the web..." autocomplete="off">
+<div id="search-ui">
+    <div id="top-bar">
+        <h1 style="font-size:3rem">Crewgle</h1>
+        <input type="text" id="q" placeholder="Type /play or search..." autocomplete="off">
+    </div>
+    <iframe id="bing-frame"></iframe>
 </div>
 
 <div id="game" tabindex="0">
-    <div id="exit" onclick="location.reload()">X</div>
-    <div id="hud">SYSTEM: ONLINE<br>PRESS 'V' TO VENT</div>
+    <button id="home-btn" onclick="location.reload()">EXIT</button>
     <canvas id="c"></canvas>
-    <div id="joy"><div id="knob"></div></div>
+    
+    <div id="modal-engine" class="modal">
+        <div class="tablet">
+            <h3 style="color:var(--yellow)">ENGINE TILT</h3>
+            <div style="width:120px; height:120px; border:4px solid #555; border-radius:50%; margin:20px auto; position:relative; background:#111;">
+                <div style="width:15px;height:15px;border:2px solid #0f0;position:absolute;top:5px;left:48px;border-radius:50%"></div>
+                <div id="needle"></div>
+            </div>
+            <p style="font-size:12px">USE ARROW KEYS OR TILT PHONE</p>
+            <button onclick="closeModals()">EXIT</button>
+        </div>
+    </div>
+
+    <div id="modal-reactor" class="modal">
+        <div class="tablet">
+            <h3 style="color:#0f0">REACTOR SEQUENCE</h3>
+            <p id="react-msg">Press 1 to 5</p>
+            <div class="grid" id="react-grid">
+                </div>
+            <button onclick="closeModals()" style="margin-top:10px">EXIT</button>
+        </div>
+    </div>
 </div>
 
 <script>
     const q = document.getElementById('q');
     const c = document.getElementById('c');
     const ctx = c.getContext('2d');
+    const needle = document.getElementById('needle');
 
-    let player = { x: 0, y: 0, dx: 0, dy: 0, speed: 4.5, side: 1, dead: false, inVent: -1 };
-    let yellow = { x: 0, y: 0, speed: 4.2 };
-    let blue = { x: 100, y: 100, speed: 2.2, inVent: -1 };
-    let green = { x: 0, y: 0, angle: 0, r: 80 }; // Guardian Radius
+    let player = { x: 0, y: 0, speed: 4.5, dead: false };
+    let yellow = { x: 200, y: 200, speed: 3.5 };
+    let blue = { x: 600, y: 600, speed: 2.3 };
+    let green = { x: 0, y: 0, angle: 0 };
     
-    let gameActive = false, keys = {};
-    const walls = [], vents = [];
+    let gameActive = false, inTask = false, engineAngle = 90, reactStep = 1;
+    let keys = {}, doorLocked = Math.random() < 0.5;
 
     q.addEventListener('keypress', (e) => {
-        if(e.key === "Enter" && q.value.trim().toLowerCase() === "/play") {
-            document.getElementById('search-box').style.display = 'none';
-            document.getElementById('game').style.display = 'block';
-            document.getElementById('game').focus();
-            gameActive = true; resize();
-            player.x = c.width/2; player.y = c.height/2;
-            loop();
+        if(e.key === "Enter") {
+            let val = q.value.trim().toLowerCase();
+            if(val === "/play") {
+                document.getElementById('search-ui').style.display = 'none';
+                document.getElementById('game').style.display = 'block';
+                document.getElementById('game').focus();
+                gameActive = true; resize();
+                player.x = c.width/2; player.y = c.height/2;
+                loop();
+            } else {
+                document.getElementById('top-bar').style.display = 'none';
+                document.getElementById('bing-frame').style.display = 'block';
+                document.getElementById('bing-frame').src = "https://www.bing.com/search?q=" + encodeURIComponent(val);
+            }
         }
     });
 
-    window.addEventListener('keydown', (e) => {
-        keys[e.key.toLowerCase()] = true;
-        if(e.key.toLowerCase() === 'v') handleVenting();
-    });
+    window.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; });
     window.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
 
-    function initMap() {
-        let mx = c.width/2, my = c.height/2;
-        walls.length = 0; vents.length = 0;
-        walls.push({x: mx-250, y: my-150, w: 500, h: 300, name: 'CAFETERIA'});
-        walls.push({x: mx-700, y: my-50, w: 200, h: 200, name: 'REACTOR'});
-        // Vent Locations
-        vents.push({x: mx-220, y: my-120}); 
-        vents.push({x: mx-450, y: my});     
-        vents.push({x: mx-650, y: my+100}); 
-    }
+    function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display='none'); inTask = false; }
 
-    function handleVenting() {
-        if(player.dead) return;
-        // If already in a vent, come out
-        if(player.inVent !== -1) {
-            player.inVent = -1;
-            return;
+    function setupReactor() {
+        const grid = document.getElementById('react-grid');
+        grid.innerHTML = "";
+        for(let i=1; i<=6; i++) {
+            let b = document.createElement('button');
+            b.innerText = i;
+            b.onclick = () => {
+                if(i === reactStep) {
+                    reactStep++; b.style.background = "#060";
+                    if(reactStep > 5) { alert("REACTOR STABLE"); closeModals(); }
+                } else { reactStep = 1; setupReactor(); }
+            };
+            grid.appendChild(b);
         }
-        // Try to enter a vent
-        vents.forEach((v, i) => {
-            if(Math.hypot(player.x - v.x, player.y - v.y) < 40) {
-                player.inVent = i;
-                // Move to next vent in sequence
-                let next = (i + 1) % vents.length;
-                player.x = vents[next].x;
-                player.y = vents[next].y;
-                player.inVent = next;
-            }
-        });
     }
 
     function loop() {
         if(!gameActive) return;
-        ctx.fillStyle = "#0a0a0a"; ctx.fillRect(0,0,c.width, c.height);
+        ctx.fillStyle = "#050505"; ctx.fillRect(0,0,c.width, c.height);
         let mx = c.width/2, my = c.height/2;
 
-        // Draw Walls & Vents
-        walls.forEach(w => { ctx.fillStyle = "#111"; ctx.fillRect(w.x, w.y, w.w, w.h); ctx.strokeStyle="#222"; ctx.strokeRect(w.x, w.y, w.w, w.h); });
-        vents.forEach(v => { 
-            ctx.fillStyle = "#222"; ctx.beginPath(); ctx.arc(v.x, v.y, 22, 0, Math.PI*2); ctx.fill();
-            ctx.strokeStyle = "#444"; ctx.stroke();
-        });
+        // Draw Rooms
+        ctx.fillStyle = "#111"; ctx.fillRect(mx-200, my-150, 400, 300); // Cafeteria
+        ctx.fillStyle = "#151515"; ctx.fillRect(mx-600, my-50, 250, 250); // Reactor Room
+        ctx.fillStyle = "#151515"; ctx.fillRect(mx+300, my-50, 300, 300); // Engine Room
 
-        // Green Angel Logic (Orbiting Guardian)
-        green.angle += 0.015;
-        green.x = mx + Math.cos(green.angle) * 350;
-        green.y = my + Math.sin(green.angle) * 250;
+        // Static Engines
+        ctx.fillStyle = "#333";
+        ctx.fillRect(mx+350, my+50, 60, 100); ctx.fillRect(mx+480, my+50, 60, 100);
         
-        // Aura Effect
-        let grad = ctx.createRadialGradient(green.x, green.y, 0, green.x, green.y, 100);
-        grad.addColorStop(0, "rgba(46, 204, 113, 0.2)");
-        grad.addColorStop(1, "transparent");
-        ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(green.x, green.y, 100, 0, Math.PI*2); ctx.fill();
+        // Meeting Button
+        ctx.fillStyle = "red"; ctx.beginPath(); ctx.arc(mx, my, 25, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "white"; ctx.font = "10px Arial"; ctx.fillText("MEET", mx-12, my+5);
 
-        // Blue AI Logic
-        let distToGreen = Math.hypot(player.x - green.x, player.y - green.y);
-        let isProtected = distToGreen < 100;
+        // Interaction Logic
+        if(!inTask) {
+            if(!player.dead) {
+                if(keys['w']) player.y -= player.speed; if(keys['s']) player.y += player.speed;
+                if(keys['a']) player.x -= player.speed; if(keys['d']) player.x += player.speed;
+            }
 
-        if(!player.dead && !isProtected && player.inVent === -1) {
-            let ba = Math.atan2(player.y - blue.y, player.x - blue.x);
-            blue.x += Math.cos(ba) * blue.speed; blue.y += Math.sin(ba) * blue.speed;
+            // Task Triggers
+            if(Math.hypot(player.x - (mx+440), player.y - (my+100)) < 40) { 
+                inTask = true; document.getElementById('modal-engine').style.display='flex'; 
+            }
+            if(Math.hypot(player.x - (mx-475), player.y - (my+75)) < 40) { 
+                inTask = true; reactStep = 1; setupReactor(); document.getElementById('modal-reactor').style.display='flex'; 
+            }
+            // Meeting Trigger
+            if(Math.hypot(player.x - mx, player.y - my) < 30) {
+                alert("EMERGENCY MEETING: Blue was ejected! YOU WIN!"); location.reload();
+            }
+
+            // AI Logic
+            let ya = Math.atan2(player.y-yellow.y, player.x-yellow.x);
+            yellow.x += Math.cos(ya)*yellow.speed; yellow.y += Math.sin(ya)*yellow.speed;
+            if(Math.hypot(player.x-yellow.x, player.y-yellow.y) < 30) {
+                if(player.dead) player.dead = false;
+                else { alert("GAME OVER: Scientist caught you alive!"); location.reload(); }
+            }
+
+            let ba = Math.atan2(player.y-blue.y, player.x-blue.x);
+            blue.x += Math.cos(ba)*blue.speed; blue.y += Math.sin(ba)*blue.speed;
+            if(Math.hypot(player.x-blue.x, player.y-blue.y) < 30) player.dead = true;
+        } else {
+            // Engine Tilt Task
+            if(keys['arrowleft']) engineAngle -= 2; if(keys['arrowright']) engineAngle += 2;
+            needle.style.transform = `rotate(${engineAngle}deg)`;
+            if(Math.abs(engineAngle % 360) < 5) { alert("ENGINE ALIGNED"); closeModals(); }
         }
 
-        // Yellow AI Logic (Revive)
-        let target = player.dead ? player : {x: player.x - 35, y: player.y + 10};
-        let ya = Math.atan2(target.y - yellow.y, target.x - yellow.x);
-        yellow.x += Math.cos(ya) * yellow.speed; yellow.y += Math.sin(ya) * yellow.speed;
-        if(player.dead && Math.hypot(yellow.x - player.x, yellow.y - player.y) < 25) {
-            player.dead = false;
-        }
-
-        // Player Movement
-        if(!player.dead && player.inVent === -1) {
-            if(keys['w'] || keys['arrowup']) player.y -= player.speed;
-            if(keys['s'] || keys['arrowdown']) player.y += player.speed;
-            if(keys['a'] || keys['arrowleft']) { player.x -= player.speed; player.side = -1; }
-            if(keys['d'] || keys['arrowright']) { player.x += player.speed; player.side = 1; }
-        }
-
-        // Blue Attack Logic
-        if(!player.dead && !isProtected && player.inVent === -1 && Math.hypot(player.x - blue.x, player.y - blue.y) < 30) {
-            player.dead = true;
-        }
-
-        // Drawing
         drawCrew(blue.x, blue.y, "blue", 1);
         drawCrew(yellow.x, yellow.y, "yellow", 1);
-        drawCrew(green.x, green.y, "green", 1, false, true); // Angel Green
-        if(player.inVent === -1) drawCrew(player.x, player.y, "red", player.side, player.dead);
-
+        drawCrew(player.x, player.y, "red", 1, player.dead);
         requestAnimationFrame(loop);
     }
 
-    function drawCrew(x, y, color, side, dead=false, isAngel=false) {
-        ctx.save(); ctx.translate(x, y); ctx.scale(side, 1);
-        
-        // Draw Wings for Angel Green
-        if(isAngel) {
-            ctx.fillStyle = "rgba(255,255,255,0.6)";
-            ctx.beginPath(); // Left wing
-            ctx.moveTo(-15, -10); ctx.quadraticCurveTo(-40, -40, -15, 10); ctx.fill();
-            ctx.beginPath(); // Right wing
-            ctx.moveTo(15, -10); ctx.quadraticCurveTo(40, -40, 15, 10); ctx.fill();
-            ctx.shadowBlur = 15; ctx.shadowColor = "white";
-        }
-
+    function drawCrew(x, y, color, side, dead=false) {
+        ctx.save(); ctx.translate(x, y);
         if(dead) ctx.rotate(Math.PI/2);
-        
-        // Suit
-        ctx.fillStyle = color;
-        ctx.beginPath(); ctx.roundRect(-15, -20, 30, 40, [15, 15, 5, 5]); ctx.fill();
-        ctx.strokeStyle = "black"; ctx.lineWidth = 2; ctx.stroke();
-        
-        // Visor
-        ctx.fillStyle = isAngel ? "#fff" : "#83d5e6";
-        ctx.beginPath(); ctx.roundRect(dead ? -5 : 4, -12, 14, 10, 4); ctx.fill();
-        
+        ctx.fillStyle = color; ctx.beginPath(); ctx.roundRect(-15, -20, 30, 40, [15, 15, 5, 5]); ctx.fill();
+        ctx.fillStyle = "#83d5e6"; ctx.fillRect(5, -12, 12, 8);
         ctx.restore();
     }
 
-    function resize() { c.width = window.innerWidth; c.height = window.innerHeight; initMap(); }
+    function resize() { c.width = window.innerWidth; c.height = window.innerHeight; }
     window.onresize = resize;
 </script>
 </body>
