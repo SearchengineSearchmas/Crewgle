@@ -3,168 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Crewgle | The Skeld</title>
+    <title>Crewgle</title>
     <style>
         :root { --red: #c51111; --blue: #132ed1; --visor: #83d5e6; --gold: #ffd700; }
-        body, html { margin: 0; padding: 0; background: #000; color: white; overflow: hidden; font-family: sans-serif; height: 100%; }
+        * { touch-action: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+        body, html { margin: 0; padding: 0; background: #000; color: white; overflow: hidden; height: 100%; width: 100%; position: fixed; font-family: sans-serif; }
 
-        /* Search UI */
+        /* Orientation Warning */
+        #rotate-box {
+            display: none; position: fixed; inset: 0; background: #000; z-index: 9999;
+            flex-direction: column; align-items: center; justify-content: center;
+        }
+        @media screen and (orientation: portrait) { #rotate-box { display: flex; } }
+
+        /* UI */
         #ui { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
-        .logo { font-size: 4rem; font-weight: bold; margin-bottom: 20px; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
-        input { width: 80%; max-width: 400px; padding: 15px; border-radius: 30px; border: none; font-size: 1.1rem; outline: none; text-align: center; }
+        input { width: 80%; max-width: 400px; padding: 15px; border-radius: 30px; border: none; font-size: 1.2rem; outline: none; text-align: center; }
 
-        /* Game Layer */
+        /* Game */
         #game-layer { display: none; position: fixed; inset: 0; background: #000; z-index: 100; }
-        #task-ui { position: fixed; top: 20px; left: 20px; z-index: 200; pointer-events: none;}
-        .bar-bg { width: 200px; height: 15px; background: #333; border: 2px solid #fff; border-radius: 5px; }
-        #bar-fill { width: 0%; height: 100%; background: #0f0; transition: 0.3s; }
+        #task-ui { position: fixed; top: 15px; left: 15px; z-index: 1000; }
+        .bar { width: 150px; height: 12px; background: #333; border: 2px solid white; border-radius: 5px; }
+        #fill { width: 0%; height: 100%; background: #0f0; transition: 0.3s; }
 
-        /* Emergency Meeting */
-        #meeting { display: none; position: fixed; inset: 0; background: rgba(197, 17, 17, 0.95); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        
-        /* Nav Crewmates */
-        .nav { position: fixed; bottom: 20px; width: 100%; display: flex; justify-content: space-around; z-index: 1000; }
-        .btn-crew { width: 50px; height: 65px; position: relative; cursor: pointer; }
-        .body-shape { width: 100%; height: 100%; border-radius: 20px 20px 10px 10px; border: 3px solid #000; }
-        .backpack { position: absolute; left: -10px; top: 15px; width: 15px; height: 35px; border: 3px solid #000; border-radius: 5px; }
-        .visor-shape { position: absolute; top: 12px; right: 5px; width: 30px; height: 15px; background: var(--visor); border: 3px solid #000; border-radius: 10px; }
+        /* Joystick */
+        #joy-base { 
+            position: fixed; bottom: 30px; left: 30px; width: 110px; height: 110px; 
+            background: rgba(255, 255, 255, 0.1); border: 3px solid rgba(255,255,255,0.4); border-radius: 50%; z-index: 5000; 
+        }
+        #joy-knob { 
+            position: absolute; top: 30px; left: 30px; width: 50px; height: 50px; 
+            background: #fff; border-radius: 50%; box-shadow: 0 0 15px rgba(255,255,255,0.5);
+        }
 
-        #win { display: none; position: fixed; inset: 0; background: rgba(0,255,0,0.9); z-index: 4000; flex-direction: column; align-items: center; justify-content: center; color: #000; }
+        #meeting { display: none; position: fixed; inset: 0; z-index: 6000; background: rgba(197, 17, 17, 0.95); flex-direction: column; align-items: center; justify-content: center; }
+        .nav { position: fixed; bottom: 20px; right: 20px; display: flex; gap: 20px; z-index: 500; }
     </style>
 </head>
 <body>
 
+<div id="rotate-box"><h1>🔄 ROTATE TO LANDSCAPE</h1></div>
+
 <div id="ui">
-    <div class="logo">Crewgle</div>
-    <input type="text" id="q" placeholder="Search like a Crewmate..." autocomplete="off">
+    <h1 style="font-size: 4rem; margin-bottom: 10px;">Crewgle</h1>
+    <input type="text" id="q" placeholder="Search or type /play..." autocomplete="off">
 </div>
 
 <div id="game-layer">
     <div id="task-ui">
-        <div class="bar-bg"><div id="bar-fill"></div></div>
-        <p id="task-text" style="margin-top:5px; color:#0f0;">Tasks: 0/4</p>
+        <div class="bar"><div id="fill"></div></div>
+        <div id="status" style="color:#0f0; margin-top:5px;">Tasks: 0/4</div>
     </div>
     <canvas id="canvas"></canvas>
-    
+    <div id="joy-base"><div id="joy-knob"></div></div>
     <div id="meeting">
-        <h1 style="font-size: 4rem;">EMERGENCY MEETING</h1>
-        <p>No Imposters detected. Statue is safe.</p>
-        <button onclick="closeMeeting()" style="padding: 15px 30px; margin-top: 20px; font-size: 1.2rem; cursor: pointer;">Resume Mission</button>
+        <h1>EMERGENCY MEETING</h1>
+        <button onclick="document.getElementById('meeting').style.display='none'" style="padding:15px 30px; font-size:1.2rem; border-radius:10px; cursor:pointer;">RESUME</button>
     </div>
-
-    <div id="win"><h1>VICTORY</h1><p>The Ship is Optimized!</p><button onclick="location.reload()">Return Home</button></div>
-</div>
-
-<div class="nav">
-    <div class="btn-crew" onclick="location.reload()"><div class="backpack" style="background:var(--red)"></div><div class="body-shape" style="background:var(--red)"></div><div class="visor-shape"></div></div>
-    <div class="btn-crew"><div class="backpack" style="background:var(--blue)"></div><div class="body-shape" style="background:var(--blue)"></div><div class="visor-shape"></div></div>
 </div>
 
 <script>
     const q = document.getElementById('q');
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
-    
-    let player = { x: 400, y: 300, speed: 6 };
-    let tasks = { count: 0, total: 4, done: [false, false, false, false] };
+    const joyBase = document.getElementById('joy-base');
+    const joyKnob = document.getElementById('joy-knob');
+
+    let player = { x: 400, y: 300, dx: 0, dy: 0, speed: 5, side: 1 };
+    let tasks = { count: 0, done: [false, false, false, false] };
     let keys = {};
 
-    // Command Activation
     q.onkeypress = (e) => {
         if(e.key === "Enter") {
-            let val = q.value.toLowerCase().trim();
-            if(val === "/play") {
-                document.getElementById('ui').style.display = "none";
-                document.getElementById('game-layer').style.display = "block";
+            let v = q.value.toLowerCase().trim();
+            if(v === "/play") {
+                document.getElementById('ui').style.display = 'none';
+                document.getElementById('game-layer').style.display = 'block';
                 resize();
                 loop();
             } else {
-                window.location.href = "https://www.bing.com/search?q=" + encodeURIComponent(val);
+                window.location.href = "https://www.bing.com/search?q=" + encodeURIComponent(v);
             }
         }
     };
+
+    // Mobile Joystick
+    function handleJoy(e) {
+        e.preventDefault();
+        let t = e.touches[0];
+        let r = joyBase.getBoundingClientRect();
+        let cx = r.left + r.width/2;
+        let cy = r.top + r.height/2;
+        let dx = t.clientX - cx;
+        let dy = t.clientY - cy;
+        let dist = Math.min(50, Math.hypot(dx, dy));
+        let ang = Math.atan2(dy, dx);
+        player.dx = Math.cos(ang) * (dist / 10);
+        player.dy = Math.sin(ang) * (dist / 10);
+        joyKnob.style.transform = `translate(${Math.cos(ang)*dist}px, ${Math.sin(ang)*dist}px)`;
+        player.side = player.dx < 0 ? -1 : 1;
+    }
+    joyBase.addEventListener('touchstart', handleJoy);
+    joyBase.addEventListener('touchmove', handleJoy, {passive: false});
+    joyBase.addEventListener('touchend', () => {
+        player.dx = 0; player.dy = 0;
+        joyKnob.style.transform = `translate(0,0)`;
+    });
 
     function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
     window.onresize = resize;
     window.onkeydown = (e) => keys[e.key.toLowerCase()] = true;
     window.onkeyup = (e) => keys[e.key.toLowerCase()] = false;
 
-    function closeMeeting() { document.getElementById('meeting').style.display = "none"; }
-
-    function drawCrew(x, y, color, isMovingLeft) {
-        ctx.strokeStyle = "black"; ctx.lineWidth = 4; ctx.fillStyle = color;
-        // Backpack
-        ctx.fillRect(isMovingLeft ? x + 10 : x - 22, y - 5, 12, 25);
-        ctx.strokeRect(isMovingLeft ? x + 10 : x - 22, y - 5, 12, 25);
+    function drawCrew(x, y, color, side) {
+        ctx.fillStyle = color; ctx.strokeStyle = "black"; ctx.lineWidth = 3;
         // Body
-        ctx.beginPath();
-        ctx.roundRect(x - 15, y - 20, 30, 40, [15, 15, 5, 5]);
-        ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.roundRect(x - 15, y - 20, 30, 40, [15, 15, 5, 5]); ctx.fill(); ctx.stroke();
         // Visor
         ctx.fillStyle = "#83d5e6";
-        ctx.beginPath();
-        ctx.roundRect(isMovingLeft ? x - 18 : x + 2, y - 12, 18, 10, 8);
-        ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.roundRect(side < 0 ? x-18 : x+2, y-12, 16, 10, 5); ctx.fill(); ctx.stroke();
     }
 
     function loop() {
-        if(document.getElementById('meeting').style.display === "flex") return requestAnimationFrame(loop);
-        
-        ctx.fillStyle = "#000";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        if(document.getElementById('meeting').style.display === 'flex') return requestAnimationFrame(loop);
+        ctx.fillStyle = "#000"; ctx.fillRect(0,0,canvas.width, canvas.height);
 
-        // MAP DESIGN (The Skeld Expanded)
+        // Skeld Rooms
         ctx.fillStyle = "#3e444e";
-        ctx.fillRect(200, 150, 400, 300); // Cafeteria (Center)
-        ctx.fillRect(0, 225, 200, 150);   // MedBay (Left)
-        ctx.fillRect(600, 225, 200, 150); // Navigation (Right)
-        ctx.fillRect(325, 450, 150, 200); // Electrical (Bottom)
-        
-        // Hallways
-        ctx.fillRect(200, 275, 400, 50); // Horiz Hall
-        ctx.fillRect(375, 450, 50, 100); // Vert Hall
+        let midX = canvas.width/2, midY = canvas.height/2;
+        ctx.fillRect(midX - 200, midY - 150, 400, 300); // Cafeteria
+        ctx.fillRect(midX - 450, midY - 50, 250, 100);  // Medbay
+        ctx.fillRect(midX + 200, midY - 50, 250, 100);  // Nav
 
-        // The Golden Statue (Cafeteria Top Right)
-        drawCrew(550, 180, "var(--gold)", true);
-        ctx.fillStyle = "white"; ctx.font = "12px Arial";
-        ctx.fillText("GOLD STATUE", 520, 150);
+        // Gold Statue
+        drawCrew(midX + 150, midY - 110, "gold", 1);
 
         // Emergency Table
-        ctx.fillStyle = "#2c313a";
-        ctx.beginPath(); ctx.arc(400, 300, 50, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = "red";
-        ctx.beginPath(); ctx.arc(400, 300, 15, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "#2c313a"; ctx.beginPath(); ctx.arc(midX, midY, 50, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "red"; ctx.beginPath(); ctx.arc(midX, midY, 15, 0, Math.PI*2); ctx.fill();
 
-        // Tasks Locations
-        const taskPos = [{x:50,y:300}, {x:750,y:300}, {x:400,y:600}, {x:300,y:180}];
-        taskPos.forEach((p, i) => {
+        // Tasks
+        const pts = [{x:midX-400, y:midY}, {x:midX+400, y:midY}, {x:midX, y:midY-120}, {x:midX, y:midY+120}];
+        pts.forEach((p, i) => {
             if(!tasks.done[i]) {
-                ctx.fillStyle = "yellow";
-                ctx.fillRect(p.x - 10, p.y - 10, 20, 20);
-                if(Math.hypot(player.x - p.x, player.y - p.y) < 30) {
-                    tasks.done[i] = true;
-                    tasks.count++;
-                    document.getElementById('bar-fill').style.width = (tasks.count/tasks.total * 100) + "%";
-                    document.getElementById('task-text').innerText = `Tasks: ${tasks.count}/4`;
+                ctx.fillStyle = "yellow"; ctx.fillRect(p.x-15, p.y-15, 30, 30);
+                if(Math.hypot(player.x-p.x, player.y-p.y) < 40) {
+                    tasks.done[i] = true; tasks.count++;
+                    document.getElementById('fill').style.width = (tasks.count/4*100)+'%';
+                    document.getElementById('status').innerText = `Tasks: ${tasks.count}/4`;
                 }
             }
         });
 
-        // Movement
-        let ml = keys['a'] || keys['arrowleft'];
-        if(keys['w'] || keys['arrowup']) player.y -= player.speed;
-        if(keys['s'] || keys['arrowdown']) player.y += player.speed;
-        if(ml) player.x -= player.speed;
-        if(keys['d'] || keys['arrowright']) player.x += player.speed;
+        // Controls
+        if(keys['w'] || keys['arrowup']) player.y -= 5;
+        if(keys['s'] || keys['arrowdown']) player.y += 5;
+        if(keys['a'] || keys['arrowleft']) { player.x -= 5; player.side = -1; }
+        if(keys['d'] || keys['arrowright']) { player.x += 5; player.side = 1; }
+        player.x += player.dx; player.y += player.dy;
 
-        // Emergency Button Action
-        if(Math.hypot(player.x - 400, player.y - 300) < 40 && keys['e']) {
-            document.getElementById('meeting').style.display = "flex";
-            keys['e'] = false;
+        // Emergency Call (E or proximity on mobile)
+        if(Math.hypot(player.x - midX, player.y - midY) < 40 && (keys['e'])) {
+            document.getElementById('meeting').style.display = 'flex';
         }
 
-        drawCrew(player.x, player.y, "#c51111", ml);
-        if(tasks.count === tasks.total) document.getElementById('win').style.display = "flex";
+        drawCrew(player.x, player.y, "red", player.side);
         requestAnimationFrame(loop);
     }
 </script>
