@@ -2,166 +2,299 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crewgle</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        :root { --g-blue: #4285f4; --g-red: #ea4335; --g-yellow: #fbbc05; --g-green: #34a853; }
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Arial', sans-serif; background: #fff; overflow-x: hidden; }
-        
-        /* Navigation & Header */
-        #home-screen { display: flex; flex-direction: column; align-items: center; padding-top: 10vh; height: 100vh; }
-        #results-screen { display: none; height: 100vh; flex-direction: column; }
-        
-        .logo-big { font-size: 5rem; font-weight: bold; margin-bottom: 25px; letter-spacing: -3px; cursor: pointer; }
-        .logo-big span:nth-child(1) { color: var(--g-blue); }
-        .logo-big span:nth-child(2) { color: var(--g-red); }
-        .logo-big span:nth-child(3) { color: var(--g-yellow); }
-        .logo-big span:nth-child(4) { color: var(--g-blue); }
-        .logo-big span:nth-child(5) { color: var(--g-green); }
-        .logo-big span:nth-child(6) { color: var(--g-red); }
+        /* RESET + FULL HEIGHT */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
 
-        .search-cont { width: 90%; max-width: 580px; position: relative; }
-        .s-in { width: 100%; padding: 14px 25px; border-radius: 24px; border: 1px solid #dfe1e5; font-size: 16px; outline: none; }
-        .s-in:focus { box-shadow: 0 1px 6px rgba(32,33,36,0.28); }
+        /* CLEAN BACKGROUND (Removed Santa.png) */
+        body {
+            font-family: 'Arial', sans-serif;
+            color: #202124;
+            background: #ffffff;
+        }
 
-        /* LIVE NEWS FEED ON HOME */
-        #live-news-home { margin-top: 40px; width: 90%; max-width: 700px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .news-item { padding: 10px; border-bottom: 1px solid #eee; text-decoration: none; color: #333; font-size: 13px; }
-        .news-item:hover { color: var(--g-blue); }
+        /* HOME FILLS VIEWPORT */
+        #home {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
 
-        /* Tabs */
-        .tabs { display: flex; gap: 20px; padding: 10px 20px; border-bottom: 1px solid #eee; background: #fff; font-size: 14px; color: #70757a; }
-        .tab { cursor: pointer; padding: 5px 0; border-bottom: 3px solid transparent; }
-        .tab.active { color: var(--g-blue); border-bottom-color: var(--g-blue); font-weight: bold; }
+        /* LOGO - Crewgle Branding */
+        .logo {
+            font-size: clamp(48px, 10vw, 80px);
+            font-weight: bold;
+            letter-spacing: -3px;
+            margin-bottom: 20px;
+        }
+        .logo span:nth-child(1){color:#4285f4} /* C */
+        .logo span:nth-child(2){color:#ea4335} /* r */
+        .logo span:nth-child(3){color:#fbbc05} /* e */
+        .logo span:nth-child(4){color:#4285f4} /* w */
+        .logo span:nth-child(5){color:#34a853} /* g */
+        .logo span:nth-child(6){color:#ea4335} /* l */
+        .logo span:nth-child(7){color:#fbbc05} /* e */
 
-        /* Content Area */
-        #content-area { flex: 1; overflow-y: auto; padding: 20px; background: #f8f9fa; }
-        .v-stack { display: flex; flex-direction: column; gap: 15px; max-width: 800px; margin: 0 auto; }
-        .v-card { background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #dfe1e5; text-decoration: none; display: block; }
+        /* SEARCH */
+        .search-box {
+            width: 90%;
+            max-width: 580px;
+            padding: 0 16px;
+        }
+        input {
+            width: 100%;
+            padding: 14px 20px;
+            font-size: 16px;
+            border-radius: 24px;
+            border: 1px solid #dfe1e5;
+            transition: box-shadow 0.2s;
+        }
+        input:focus { 
+            outline: none;
+            box-shadow: 0 1px 6px rgba(32,33,36,0.28);
+            border-color: transparent;
+        }
 
-        /* RANDOM MASONRY GRID (Images) */
-        #media-grid { columns: 3 250px; column-gap: 15px; width: 100%; max-width: 1200px; margin: 0 auto; }
-        .masonry-item { break-inside: avoid; margin-bottom: 15px; background: #fff; border-radius: 8px; overflow: hidden; border: 1px solid #eee; }
-        .masonry-item img { width: 100%; height: auto; display: block; }
+        /* RESULTS SCREEN */
+        #results {
+            display: none;
+            padding: 15px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .topbar {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            padding: 10px 0;
+        }
+        .back {
+            font-size: 24px;
+            cursor: pointer;
+            color: #ea4335; /* Red as requested previously */
+            user-select: none;
+        }
+        .small-logo {
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+        }
 
-        /* Crewmate Nav */
-        .crew-nav { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); display: flex; gap: 50px; z-index: 10000; }
-        .crew-btn { width: 45px; height: 60px; cursor: pointer; border: none; background: transparent; position: relative; }
-        .crew-body { width: 100%; height: 100%; border-radius: 12px 12px 4px 4px; border: 3px solid #000; position: relative; }
-        .crew-visor { width: 28px; height: 14px; background: #83d5e6; border: 2px solid #000; border-radius: 6px; position: absolute; top: 10px; right: -5px; }
-        .red-crew .crew-body { background: var(--g-red); }
-        .blue-crew .crew-body { background: var(--g-blue); }
-        .crew-label { position: absolute; bottom: -22px; width: 100%; text-align: center; font-size: 10px; font-weight: bold; color: #555; }
+        /* TABS */
+        .tabs {
+            display: flex;
+            gap: 25px;
+            margin: 15px 0;
+            border-bottom: 1px solid #ddd;
+            flex-wrap: wrap;
+        }
+        .tab {
+            padding: 10px 0;
+            cursor: pointer;
+            color: #5f6368;
+            font-size: 14px;
+        }
+        .tab.active {
+            color: #1a73e8;
+            border-bottom: 3px solid #1a73e8;
+            font-weight: bold;
+        }
+        .content { margin-top: 20px; }
+
+        /* ENGINES (All Tab) */
+        .engine {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-size: 18px;
+            margin: 18px 0;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            cursor: pointer;
+            background: #fafafa;
+        }
+        .engine:hover { background: #f1f3f4; }
+        .engine img { width: 24px; height: 24px; }
+
+        /* GRIDS (Masonry-style Columns) */
+        .images, .videos {
+            columns: 3 200px;
+            column-gap: 15px;
+        }
+        .img-card {
+            break-inside: avoid;
+            margin-bottom: 15px;
+        }
+        .images img, .videos img {
+            width: 100%;
+            border-radius: 8px;
+            display: block;
+        }
+        .video-title {
+            font-size: 13px;
+            margin-top: 8px;
+            color: #3c4043;
+            padding: 0 5px;
+        }
+
+        /* NEWS */
+        .news-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .news-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 18px;
+            font-size: 18px;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            cursor: pointer;
+            background: white;
+        }
+        .news-btn:hover { background: #f8f9fa; }
+
+        /* FLIGHTS */
+        .flight-frame {
+            width: 100%;
+            height: 650px;
+            border: none;
+            border-radius: 12px;
+        }
     </style>
 </head>
-<body onload="fetchHomeNews()">
+<body>
 
-<div id="home-screen">
-    <div class="logo-big" onclick="location.reload()"><span>C</span><span>r</span><span>e</span><span>w</span><span>g</span><span>l</span><span>e</span></div>
-    <div class="search-cont">
-        <input type="text" class="s-in" id="q-home" placeholder="Search Crewgle..." onkeypress="runSearch(event)">
+<div id="home">
+    <div class="logo">
+        <span>C</span><span>r</span><span>e</span><span>w</span><span>g</span><span>l</span><span>e</span>
     </div>
-    <div id="live-news-home">
-        <div style="grid-column: 1 / -1; font-weight: bold; color: #555; border-bottom: 2px solid var(--g-red);">LIVE HEADLINES</div>
-        </div>
+    <div class="search-box">
+        <input id="qHome" placeholder="Search the galaxy...">
+    </div>
+    <div style="margin-top: 30px; color: #70757a; font-size: 14px;">Powered by Searchmas Logic</div>
 </div>
 
-<div id="results-screen">
-    <div style="display: flex; align-items: center; padding: 15px 20px; gap: 20px;">
-        <div class="logo-big" style="font-size: 1.5rem; margin:0;" onclick="goHome()"><span>C</span><span>r</span><span>e</span><span>w</span><span>g</span><span>l</span><span>e</span></div>
-        <div class="search-cont" style="max-width: 500px;">
-            <input type="text" class="s-in" id="q-result" onkeypress="runSearch(event)">
+<div id="results">
+    <div class="topbar">
+        <div class="back" onclick="goHome()">⬅</div>
+        <div class="small-logo" onclick="goHome()">
+            <span>C</span><span>r</span><span>e</span><span>w</span><span>g</span><span>l</span><span>e</span>
+        </div>
+        <div style="flex-grow: 1; max-width: 580px;">
+            <input id="qTop">
         </div>
     </div>
-    
+
     <div class="tabs">
         <div class="tab active" onclick="setTab('all')">All</div>
+        <div class="tab" onclick="setTab('ai')">AI Mode</div>
+        <div class="tab" onclick="setTab('flights')">Flights</div>
         <div class="tab" onclick="setTab('images')">Images</div>
         <div class="tab" onclick="setTab('videos')">Videos</div>
         <div class="tab" onclick="setTab('news')">News</div>
-        <div class="tab" onclick="setTab('flights')">Flights</div>
     </div>
 
-    <div id="content-area"></div>
-</div>
-
-<div class="crew-nav">
-    <button class="crew-btn red-crew" onclick="goHome()">
-        <div class="crew-body"><div class="crew-visor"></div></div>
-        <div class="crew-label">HOME</div>
-    </button>
-    <button class="crew-btn blue-crew" onclick="window.location.href='https://searchenginesearchmas.github.io/Searchmas'">
-        <div class="crew-body"><div class="crew-visor"></div></div>
-        <div class="crew-label">SEARCHMAS</div>
-    </button>
+    <div class="content" id="content"></div>
 </div>
 
 <script>
-    const API_IMG = 'Wsi2QpvPXyiNLfGRbZX8MwbDg7oqCQQFtibqIu02nWA';
-    const API_VID = 'AIzaSyBKN7qNWVOSjIf040epQA579G29IzPxqpI';
+    var tab = "all";
+    var UNSPLASH = "1IF0KThuYgH722kFgZ5TaZ1tyckTiMUri6DxUSeZ-fk";
+    var YT = "AIzaSyBKN7qNWVOSjIf040epQA579G29IzPxqpI";
 
-    async function fetchHomeNews() {
-        const feed = document.getElementById('live-news-home');
-        try {
-            const res = await fetch('https://newsapi.org/v2/top-headlines?country=us&apiKey=YOUR_NEWS_API_KEY'); // Note: Needs valid NewsAPI key or proxy
-            // Simulation of live feed if key is missing:
-            const demoNews = [
-                {t: "Global flight traffic hits record high today", u: "#"},
-                {t: "Crewgle launches new multi-engine search interface", u: "#"},
-                {t: "New discoveries in deep space exploration", u: "#"},
-                {t: "Weather alerts issued for northern territories", u: "#"}
-            ];
-            demoNews.forEach(item => {
-                feed.innerHTML += `<a href="${item.u}" class="news-item">● ${item.t}</a>`;
-            });
-        } catch(e) { console.log("News fetch failed"); }
-    }
+    var qHome = document.getElementById("qHome");
+    var qTop = document.getElementById("qTop");
+    var home = document.getElementById("home");
+    var results = document.getElementById("results");
+    var content = document.getElementById("content");
 
-    function runSearch(e) {
-        if (e.key === 'Enter') {
-            const val = e.target.value;
-            if(!val) return;
-            document.getElementById('home-screen').style.display = 'none';
-            document.getElementById('results-screen').style.display = 'flex';
-            document.getElementById('q-result').value = val;
-            setTab('all');
-        }
+    qHome.onkeydown = e => { if(e.key === "Enter") enter() };
+    qTop.onkeydown = e => { if(e.key === "Enter") search() };
+
+    function enter() {
+        if(!qHome.value) return;
+        home.style.display = "none";
+        results.style.display = "block";
+        qTop.value = qHome.value;
+        search();
     }
 
     function goHome() {
-        document.getElementById('home-screen').style.display = 'flex';
-        document.getElementById('results-screen').style.display = 'none';
+        results.style.display = "none";
+        home.style.display = "flex";
+        qHome.value = "";
     }
 
-    async function setTab(type) {
-        const query = document.getElementById('q-result').value;
-        const area = document.getElementById('content-area');
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        if(event) event.currentTarget.classList.add('active');
+    function setTab(t) {
+        tab = t;
+        [...document.getElementsByClassName("tab")].forEach(el => el.classList.remove("active"));
+        event.target.classList.add("active");
+        search();
+    }
 
-        if (type === 'all') {
-            area.innerHTML = `<div class="v-stack">
-                <a href="https://search.yahoo.com/search?p=${query}" target="_blank" class="v-card"><h3>Yahoo</h3><p>Results for "${query}"</p></a>
-                <a href="https://www.google.com/search?q=${query}" target="_blank" class="v-card"><h3>Google</h3><p>Results for "${query}"</p></a>
-                <a href="https://www.bing.com/search?q=${query}" target="_blank" class="v-card"><h3>Bing</h3><p>Results for "${query}"</p></a>
-            </div>`;
-        } else if (type === 'flights') {
-            area.innerHTML = `<iframe src="https://www.flightradar24.com/simple_index.php?lat=20&lon=0&z=2" width="100%" height="600px" style="border:none; border-radius:10px;"></iframe>`;
-        } else if (type === 'images') {
-            area.innerHTML = '<div id="media-grid">Loading random grid...</div>';
-            const r = await fetch(`https://api.unsplash.com/search/photos?query=${query}&per_page=30&client_id=${API_IMG}`);
-            const d = await r.json();
-            document.getElementById('media-grid').innerHTML = d.results.map(i => `
-                <div class="masonry-item"><img src="${i.urls.small}"></div>`).join('');
-        } else if (type === 'news') {
-            area.innerHTML = `
-                <div style="display:flex; gap:10px; margin-bottom:20px; justify-content:center;">
-                    <button class="v-card" style="cursor:pointer" onclick="window.open('https://news.google.com/search?q=${query}')">Google News</button>
-                    <button class="v-card" style="cursor:pointer" onclick="window.open('https://www.bing.com/news/search?q=${query}')">Bing News</button>
-                </div>
-                <div class="v-stack">
-                    <div class="v-card"><h3>Vertical News Results</h3><p>Searching for ${query} across major networks...</p></div>
-                </div>`;
+    function search() {
+        var q = encodeURIComponent(qTop.value);
+        content.innerHTML = "";
+
+        if(tab === "ai") {
+            window.open("https://gemini.google.com", "_blank");
+            return;
+        }
+
+        if(tab === "all") {
+            content.innerHTML =
+                "<div class='engine' onclick=\"window.open('https://www.google.com/search?q="+q+"')\"><img src='https://www.google.com/favicon.ico'> Google</div>" +
+                "<div class='engine' onclick=\"window.open('https://www.bing.com/search?q="+q+"')\"><img src='https://www.bing.com/favicon.ico'> Bing</div>" +
+                "<div class='engine' onclick=\"window.open('https://duckduckgo.com/?q="+q+"')\"><img src='https://duckduckgo.com/favicon.ico'> DuckDuckGo</div>";
+        }
+
+        if(tab === "flights") {
+            content.innerHTML = "<iframe class='flight-frame' src='https://www.flightradar24.com/simple_index.php?lat=20&lon=0&z=2'></iframe>";
+        }
+
+        if(tab === "images") {
+            content.innerHTML = "Loading images...";
+            fetch("https://api.unsplash.com/search/photos?query="+q+"&per_page=21&client_id="+UNSPLASH)
+            .then(r => r.json())
+            .then(d => {
+                content.innerHTML = "<div class='images'>" + d.results.map(i => "<div class='img-card'><img src='"+i.urls.small+"'></div>").join("") + "</div>";
+            });
+        }
+
+        if(tab === "videos") {
+            content.innerHTML = "Loading videos...";
+            fetch("https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=12&q="+q+"&key="+YT)
+            .then(r => r.json())
+            .then(d => {
+                content.innerHTML = "<div class='videos'>" + d.items.map(v =>
+                    "<div class='img-card'><a target='_blank' href='https://youtube.com/watch?v="+v.id.videoId+"'>" +
+                    "<img src='"+v.snippet.thumbnails.medium.url+"'></a>" +
+                    "<div class='video-title'>"+v.snippet.title+"</div></div>"
+                ).join("") + "</div>";
+            });
+        }
+
+        if(tab === "news") {
+            content.innerHTML = 
+                "<div class='news-container'>" +
+                "<div class='news-btn' onclick=\"window.open('https://news.google.com/search?q="+q+"')\"><img src='https://www.google.com/favicon.ico'> Google News</div>" +
+                "<div class='news-btn' onclick=\"window.open('https://www.bing.com/news/search?q="+q+"')\"><img src='https://www.bing.com/favicon.ico'> Bing News</div>" +
+                "</div>";
         }
     }
 </script>
