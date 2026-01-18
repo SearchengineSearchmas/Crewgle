@@ -1,70 +1,60 @@
 <!DOCTYPE html>
-<html style="background: #000;">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Crewgle</title>
     <style>
-        :root { --red: #c51111; --blue: #132ed1; --visor: #83d5e6; }
+        :root { --red: #c51111; --blue: #132ed1; }
         * { touch-action: none; user-select: none; box-sizing: border-box; }
         body, html { margin: 0; padding: 0; background: #000; color: white; height: 100%; width: 100%; font-family: sans-serif; overflow: hidden; }
 
-        /* Stealth UI */
-        #ui { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
+        /* Search Interface */
+        #search-container { position: absolute; inset: 0; display: flex; flex-direction: column; background: #000; z-index: 2000; }
+        #search-bar-top { padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.3s; height: 100%; }
         .logo { font-size: 5rem; font-weight: bold; margin-bottom: 20px; }
-        #q { width: 80%; max-width: 500px; padding: 18px; border-radius: 50px; border: 1px solid #333; background: #111; color: #fff; text-align: center; outline: none; }
+        #q { width: 85%; max-width: 580px; padding: 15px 25px; border-radius: 50px; border: 1px solid #333; background: #111; color: white; font-size: 1.1rem; outline: none; }
+        
+        #search-frame { display: none; flex-grow: 1; border: none; background: #fff; }
+        .results-active #search-bar-top { height: 80px; flex-direction: row; justify-content: flex-start; border-bottom: 1px solid #333; }
+        .results-active .logo { font-size: 1.5rem; margin: 0 20px 0 0; }
 
-        /* Game */
+        /* Game Layer */
         #game { display: none; position: fixed; inset: 0; z-index: 100; background: #000; }
-        #rotate-box { display: none; position: absolute; inset: 0; background: #000; z-index: 9999; flex-direction: column; align-items: center; justify-content: center; }
-        @media screen and (orientation: portrait) { #game #rotate-box { display: flex; } }
-
-        /* HUD */
-        #task-ui { position: fixed; top: 15px; left: 15px; z-index: 1000; }
-        .bar { width: 140px; height: 10px; background: #222; border: 1px solid #fff; }
-        #fill { width: 0%; height: 100%; background: #0f0; transition: 0.3s; }
-
-        /* Modals */
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; }
-        .panel { background: #222; padding: 30px; border: 4px solid #444; border-radius: 20px; text-align: center; min-width: 300px; }
+        #exit-btn { position: fixed; top: 15px; right: 15px; width: 45px; height: 45px; background: var(--red); color: white; border: 2px solid #fff; border-radius: 50%; font-weight: bold; cursor: pointer; z-index: 3000; display: flex; align-items: center; justify-content: center; font-size: 20px; }
         
-        /* Engine Task Visuals */
-        #engine-gauge { width: 200px; height: 200px; border: 5px solid #555; border-radius: 50%; margin: 20px auto; position: relative; background: #111; }
-        #needle { width: 4px; height: 90px; background: #f00; position: absolute; bottom: 50%; left: calc(50% - 2px); transform-origin: bottom; transform: rotate(0deg); transition: 0.1s; }
-        #target-zone { width: 30px; height: 30px; border: 3px solid #0f0; position: absolute; top: 10px; left: calc(50% - 15px); border-radius: 50%; }
+        /* Engine Task */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; }
+        .panel { background: #222; padding: 30px; border: 4px solid #444; border-radius: 20px; text-align: center; }
+        #gauge { width: 180px; height: 180px; border: 5px solid #555; border-radius: 50%; margin: 20px; position: relative; background: #111; }
+        #needle { width: 4px; height: 80px; background: #f00; position: absolute; bottom: 50%; left: calc(50% - 2px); transform-origin: bottom; transform: rotate(90deg); }
+        #target { width: 30px; height: 30px; border: 3px solid #0f0; position: absolute; top: 5px; left: calc(50% - 15px); border-radius: 50%; }
 
-        #joy { position: fixed; bottom: 30px; left: 30px; width: 100px; height: 100px; background: rgba(255,255,255,0.1); border: 2px solid #fff; border-radius: 50%; z-index: 5000; }
+        #joy { position: fixed; bottom: 30px; left: 30px; width: 100px; height: 100px; background: rgba(255,255,255,0.1); border: 2px solid #fff; border-radius: 50%; }
         #knob { position: absolute; top: 25px; left: 25px; width: 50px; height: 50px; background: #fff; border-radius: 50%; }
-        
-        .btn { padding: 10px 20px; background: #444; color: #fff; border: none; border-radius: 5px; margin-top: 15px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div id="ui">
-    <div class="logo">Crewgle</div>
-    <input type="text" id="q" placeholder="Search the web..." autocomplete="off">
+<div id="search-container">
+    <div id="search-bar-top">
+        <div class="logo">Crewgle</div>
+        <input type="text" id="q" placeholder="Search the web..." autocomplete="off">
+    </div>
+    <iframe id="search-frame"></iframe>
 </div>
 
 <div id="game">
-    <div id="rotate-box"><h1>🔄 ROTATE PHONE</h1></div>
-    <div id="task-ui">
-        <div class="bar"><div id="fill"></div></div>
-        <div id="stat" style="color:#0f0; font-size:12px; margin-top:5px;">TASKS: 0/1</div>
-    </div>
+    <button id="exit-btn" onclick="location.reload()">X</button>
     <canvas id="c"></canvas>
     <div id="joy"><div id="knob"></div></div>
 
     <div id="modal-engine" class="modal">
         <div class="panel">
-            <h3>ENGINE ALIGNMENT</h3>
-            <p style="font-size: 12px; color: #aaa;">PC: ARROWS | MOBILE: TILT</p>
-            <div id="engine-gauge">
-                <div id="target-zone"></div>
-                <div id="needle"></div>
-            </div>
-            <p id="engine-msg">ALIGN TO TOP</p>
-            <button class="btn" onclick="closeTask()">ABANDON</button>
+            <h3>ENGINE TILT</h3>
+            <p style="font-size:12px; color:#888;">ARROWS (PC) | TILT (MOBILE)</p>
+            <div id="gauge"><div id="target"></div><div id="needle"></div></div>
+            <button onclick="closeTask()" style="padding:10px; background:#444; color:#fff; border:none; border-radius:5px;">CANCEL</button>
         </div>
     </div>
 </div>
@@ -75,54 +65,54 @@
     const ctx = c.getContext('2d');
     const needle = document.getElementById('needle');
 
-    let player = { x: 0, y: 0, dx: 0, dy: 0, speed: 5, side: 1 };
-    let imposter = { x: 100, y: 100, speed: 2.2 };
-    let engineAngle = 90; // Starting angle
-    let tasks = { count: 0, total: 1, done: [false] };
-    let gameActive = false, inTask = false;
-    let keys = {};
+    let player = { x: 0, y: 0, dx: 0, dy: 0, speed: 4.5, side: 1, r: 15 };
+    let hunter = { x: 100, y: 100, speed: 1.9, state: 'stalk', wait: 0 };
+    let engineAngle = 90;
+    let gameActive = false, inTask = false, keys = {};
+    const walls = [];
 
-    // 1. Stealth Launch
     q.addEventListener('keypress', (e) => {
-        if(e.key === "Enter" && q.value.toLowerCase().trim() === "/play") {
-            document.getElementById('ui').style.display = 'none';
-            document.getElementById('game').style.display = 'block';
-            gameActive = true; resize();
-            player.x = c.width/2; player.y = c.height/2;
-            loop();
-        } else if(e.key === "Enter") {
-            window.location.href = "https://www.bing.com/search?q=" + q.value;
+        if(e.key === "Enter") {
+            let val = q.value.trim().toLowerCase();
+            if(val === "/play") {
+                document.getElementById('search-container').style.display = 'none';
+                document.getElementById('game').style.display = 'block';
+                gameActive = true; resize();
+                player.x = c.width/2; player.y = c.height/2;
+                loop();
+            } else if (val !== "") {
+                document.body.classList.add('results-active');
+                document.getElementById('search-frame').style.display = 'block';
+                document.getElementById('search-frame').src = "https://www.bing.com/search?q=" + encodeURIComponent(val);
+            }
         }
     });
 
-    // 2. Controls
     window.onkeydown = (e) => keys[e.key.toLowerCase()] = true;
     window.onkeyup = (e) => keys[e.key.toLowerCase()] = false;
 
-    // 3. Engine Tilt Logic (Mobile)
     window.addEventListener('deviceorientation', (e) => {
-        if(inTask) {
-            // Gamma is tilt left/right when in landscape
-            engineAngle += e.gamma * 0.1;
-        }
+        if(inTask && e.gamma) engineAngle += e.gamma * 0.15;
     });
 
-    function closeTask() {
-        document.getElementById('modal-engine').style.display = 'none';
-        inTask = false;
+    function closeTask() { document.getElementById('modal-engine').style.display = 'none'; inTask = false; }
+
+    function initWalls() {
+        let mx = c.width/2, my = c.height/2;
+        walls.length = 0;
+        walls.push({x: mx-200, y: my-150, w: 400, h: 300, name: 'Cafeteria'});
+        walls.push({x: mx-600, y: my-100, w: 200, h: 200, name: 'Reactor'});
+        walls.push({x: mx-500, y: my+200, w: 250, h: 150, name: 'Engine Room'});
     }
 
-    function completeEngine() {
-        if(!tasks.done[0]) {
-            tasks.done[0] = true;
-            tasks.count++;
-            document.getElementById('fill').style.width = "100%";
-            document.getElementById('stat').innerText = "TASKS: 1/1 - MISSION CLEAR";
-            closeTask();
+    function checkWall(nx, ny) {
+        for(let w of walls) {
+            if (nx + player.r > w.x && nx - player.r < w.x + w.w &&
+                ny + player.r > w.y && ny - player.r < w.y + w.h) return true;
         }
+        return false;
     }
 
-    // Joystick logic
     function moveJoy(e) {
         if(!gameActive || inTask) return;
         let t = e.touches ? e.touches[0] : e;
@@ -133,70 +123,68 @@
         player.dx = Math.cos(ang) * (dist / 10);
         player.dy = Math.sin(ang) * (dist / 10);
         document.getElementById('knob').style.transform = `translate(${Math.cos(ang)*dist}px, ${Math.sin(ang)*dist}px)`;
+        player.side = player.dx < 0 ? -1 : 1;
     }
     document.getElementById('joy').addEventListener('touchmove', moveJoy);
     document.getElementById('joy').addEventListener('touchend', () => { player.dx = 0; player.dy = 0; document.getElementById('knob').style.transform = "translate(0,0)"; });
 
-    function resize() { c.width = window.innerWidth; c.height = window.innerHeight; }
+    function resize() { c.width = window.innerWidth; c.height = window.innerHeight; initWalls(); }
     window.onresize = resize;
-
-    function drawCrew(x, y, color, side) {
-        ctx.fillStyle = color; ctx.strokeStyle = "black"; ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.roundRect(x-15, y-20, 30, 40, [15, 15, 5, 5]); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = "#83d5e6"; ctx.beginPath(); ctx.roundRect(side<0?x-18:x+2, y-12, 16, 10, 5); ctx.fill(); ctx.stroke();
-    }
 
     function loop() {
         if(!gameActive) return;
         if(!inTask) {
-            ctx.fillStyle = "#111"; ctx.fillRect(0,0,c.width, c.height);
+            ctx.fillStyle = "#050505"; ctx.fillRect(0,0,c.width, c.height);
             let mx = c.width/2, my = c.height/2;
 
-            // --- MAP ---
-            // Cafeteria (Center)
-            ctx.fillStyle = "#3e444e"; ctx.fillRect(mx-150, my-100, 300, 200);
-            // Reaction Room (Safe Room - Far Left)
-            ctx.fillStyle = "#2c3e50"; ctx.fillRect(mx-500, my-80, 200, 160);
-            // Engine Room (Bottom Left)
-            ctx.fillStyle = "#444"; ctx.fillRect(mx-400, my+150, 150, 100);
-            ctx.fillStyle = "yellow"; ctx.fillRect(mx-335, my+190, 20, 20); // Engine Task Square
-
-            // --- MOVEMENT ---
-            if(keys['w']) player.y -= player.speed; if(keys['s']) player.y += player.speed;
-            if(keys['a']) { player.x -= player.speed; player.side = -1; }
-            if(keys['d']) { player.x += player.speed; player.side = 1; }
-            player.x += player.dx; player.y += player.dy;
-
-            // --- NPC IMPOSTER ---
-            let ang = Math.atan2(player.y - imposter.y, player.x - imposter.x);
-            imposter.x += Math.cos(ang) * imposter.speed;
-            imposter.y += Math.sin(ang) * imposter.speed;
-
-            // Engine Task Trigger
-            if(Math.hypot(player.x - (mx-325), player.y - (my+200)) < 30 && !tasks.done[0]) {
-                inTask = true;
-                document.getElementById('modal-engine').style.display = 'flex';
+            // Draw Rooms/Walls
+            ctx.lineWidth = 2;
+            for(let w of walls) {
+                ctx.fillStyle = "#1a1a1a"; ctx.fillRect(w.x, w.y, w.w, w.h);
+                ctx.strokeStyle = "#333"; ctx.strokeRect(w.x, w.y, w.w, w.h);
+                ctx.fillStyle = "#444"; ctx.font = "12px sans-serif"; ctx.fillText(w.name, w.x+10, w.y+20);
             }
 
+            // Engine Task Spot
+            ctx.fillStyle = "yellow"; ctx.fillRect(mx-400, my+250, 25, 25);
+
+            // Hunter Logic
+            if(hunter.wait > 0) hunter.wait--;
+            else {
+                let ang = Math.atan2(player.y - hunter.y, player.x - hunter.x);
+                hunter.x += Math.cos(ang) * hunter.speed; hunter.y += Math.sin(ang) * hunter.speed;
+                if(Math.random() < 0.005) hunter.wait = 60; // Random pause
+            }
+
+            // Player Physics
+            let nx = player.x + player.dx, ny = player.y + player.dy;
+            if(keys['w']) ny -= player.speed; if(keys['s']) ny += player.speed;
+            if(keys['a']) { nx -= player.speed; player.side = -1; }
+            if(keys['d']) { nx += player.speed; player.side = 1; }
+
+            if(!checkWall(nx, player.y)) player.x = nx;
+            if(!checkWall(player.x, ny)) player.y = ny;
+
+            // Task Trigger
+            if(Math.hypot(player.x - (mx-387), player.y - (my+262)) < 30) { inTask = true; document.getElementById('modal-engine').style.display = 'flex'; }
+            
             // Death Check
-            if(Math.hypot(player.x - imposter.x, player.y - imposter.y) < 30) {
-                gameActive = false; alert("DEFEAT"); location.reload();
-            }
+            if(Math.hypot(player.x - hunter.x, player.y - hunter.y) < 30) { gameActive = false; alert("CAUGHT!"); location.reload(); }
 
-            drawCrew(imposter.x, imposter.y, "blue", 1);
+            drawCrew(hunter.x, hunter.y, "blue", 1);
             drawCrew(player.x, player.y, "red", player.side);
         } else {
-            // --- ENGINE TASK PC CONTROLS ---
-            if(keys['arrowleft']) engineAngle -= 2;
-            if(keys['arrowright']) engineAngle += 2;
+            if(keys['arrowleft']) engineAngle -= 2; if(keys['arrowright']) engineAngle += 2;
             needle.style.transform = `rotate(${engineAngle}deg)`;
-            
-            // Success Condition (Needle near 0 degrees / Top)
-            if(Math.abs(engineAngle % 360) < 5) {
-                completeEngine();
-            }
+            if(Math.abs(engineAngle % 360) < 5) { alert("ENGINE ALIGNED!"); closeTask(); }
         }
         requestAnimationFrame(loop);
+    }
+
+    function drawCrew(x, y, color, side) {
+        ctx.fillStyle = color; ctx.strokeStyle = "black"; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.roundRect(x-15, y-20, 30, 40, [15, 15, 5, 5]); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = "#83d5e6"; ctx.beginPath(); ctx.roundRect(side<0?x-18:x+2, y-12, 16, 10, 5); ctx.fill(); ctx.stroke();
     }
 </script>
 </body>
