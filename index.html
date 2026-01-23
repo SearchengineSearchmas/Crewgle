@@ -25,13 +25,17 @@ html, body {
 
 #logo {
   text-align: center;
-  font-size: 2.3rem;
+  font-size: 2.2rem;
   font-weight: 800;
-  padding: 16px;
+  padding: 14px;
 }
 
 #searchBox {
   padding: 0 12px 10px;
+}
+
+#searchBox.hidden {
+  display: none;
 }
 
 #searchBox input {
@@ -49,11 +53,11 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  text-align: center;
   opacity: 0.7;
-  padding: 20px;
+  text-align: center;
 }
 
+/* results iframe */
 iframe {
   flex: 1;
   width: 100%;
@@ -66,12 +70,11 @@ iframe {
 #bottomBar {
   display: flex;
   justify-content: space-around;
-  align-items: center;
   padding: 10px 0;
   background: #1c2541;
 }
 
-/* among us crewmate */
+/* Among Us–style crewmate */
 .crewmate {
   position: relative;
   width: 48px;
@@ -79,8 +82,6 @@ iframe {
   border-radius: 45% 45% 30% 30%;
   cursor: pointer;
 }
-
-/* visor */
 .crewmate::before {
   content: "";
   position: absolute;
@@ -91,8 +92,6 @@ iframe {
   background: #bde0ff;
   border-radius: 999px;
 }
-
-/* backpack */
 .crewmate::after {
   content: "";
   position: absolute;
@@ -100,8 +99,8 @@ iframe {
   top: 20px;
   width: 10px;
   height: 22px;
-  border-radius: 6px;
   background: rgba(0,0,0,0.25);
+  border-radius: 6px;
 }
 
 .red { background: #e63946; }
@@ -126,7 +125,6 @@ iframe {
   top: 50%;
   transform: translate(-50%, -50%);
 }
-
 #player::before {
   content: "";
   position: absolute;
@@ -138,35 +136,12 @@ iframe {
   border-radius: 999px;
 }
 
-/* joystick */
-#joystick {
-  position: absolute;
-  bottom: 20px;
-  left: 20px;
-  width: 110px;
-  height: 110px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.1);
-  touch-action: none;
-}
-
-#stick {
-  position: absolute;
-  width: 46px;
-  height: 46px;
-  background: rgba(255,255,255,0.7);
-  border-radius: 50%;
-  left: 32px;
-  top: 32px;
-}
-
-/* exit */
 #exit {
   position: absolute;
   top: 14px;
   right: 14px;
-  padding: 10px 14px;
   background: red;
+  padding: 10px 14px;
   border-radius: 10px;
   font-weight: bold;
 }
@@ -183,7 +158,7 @@ iframe {
   </div>
 
   <div id="placeholder">
-    🧑‍🚀 Type something above to start searching
+    🧑‍🚀 Enter a search to see results
   </div>
 
   <iframe id="results"></iframe>
@@ -198,7 +173,6 @@ iframe {
 <div id="game">
   <div id="exit">RED → HOME</div>
   <div id="player"></div>
-  <div id="joystick"><div id="stick"></div></div>
 </div>
 
 <script>
@@ -207,7 +181,7 @@ const game = document.getElementById("game");
 const results = document.getElementById("results");
 const q = document.getElementById("q");
 const placeholder = document.getElementById("placeholder");
-const player = document.getElementById("player");
+const searchBox = document.getElementById("searchBox");
 
 /* SEARCH */
 q.addEventListener("keydown", e => {
@@ -215,6 +189,7 @@ q.addEventListener("keydown", e => {
     results.src = "https://www.bing.com/search?q=" + encodeURIComponent(q.value);
     results.style.display = "block";
     placeholder.style.display = "none";
+    searchBox.classList.add("hidden"); // 🔥 REMOVE CREWGLE SEARCH BOX
   }
 });
 
@@ -234,34 +209,7 @@ if (location.pathname.endsWith("/play") || location.hash === "#play") {
   home.style.display = "none";
   game.style.display = "block";
 }
-
-/* MOVEMENT */
-let x = window.innerWidth / 2, y = window.innerHeight / 2;
-const speed = 3;
-
-function move(dx, dy) {
-  x += dx; y += dy;
-  player.style.left = x + "px";
-  player.style.top = y + "px";
-}
-
-/* keyboard */
-document.addEventListener("keydown", e => {
-  if (game.style.display !== "block") return;
-  if (e.key === "ArrowUp" || e.key === "w") move(0, -speed);
-  if (e.key === "ArrowDown" || e.key === "s") move(0, speed);
-  if (e.key === "ArrowLeft" || e.key === "a") move(-speed, 0);
-  if (e.key === "ArrowRight" || e.key === "d") move(speed, 0);
-});
-
-/* joystick */
-const joy = document.getElementById("joystick");
-joy.addEventListener("touchmove", e => {
-  const r = joy.getBoundingClientRect();
-  const t = e.touches[0];
-  move((t.clientX - (r.left + r.width/2)) * 0.05,
-       (t.clientY - (r.top + r.height/2)) * 0.05);
-});
 </script>
+
 </body>
 </html>
