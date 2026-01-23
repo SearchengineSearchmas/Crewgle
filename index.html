@@ -3,13 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <title>Crewgle</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 * { box-sizing: border-box; }
 
 html, body {
   margin: 0;
-  width: 100%;
   height: 100%;
   font-family: system-ui, sans-serif;
   background: #0b132b;
@@ -26,7 +25,7 @@ html, body {
 
 #logo {
   text-align: center;
-  font-size: 2.4rem;
+  font-size: 2.3rem;
   font-weight: 800;
   padding: 16px;
 }
@@ -44,10 +43,22 @@ html, body {
   outline: none;
 }
 
+/* placeholder */
+#placeholder {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  opacity: 0.7;
+  padding: 20px;
+}
+
 iframe {
   flex: 1;
   width: 100%;
   border: none;
+  display: none;
   background: white;
 }
 
@@ -60,10 +71,37 @@ iframe {
   background: #1c2541;
 }
 
+/* among us crewmate */
 .crewmate {
+  position: relative;
   width: 48px;
-  height: 48px;
-  border-radius: 40% 40% 30% 30%;
+  height: 58px;
+  border-radius: 45% 45% 30% 30%;
+  cursor: pointer;
+}
+
+/* visor */
+.crewmate::before {
+  content: "";
+  position: absolute;
+  top: 12px;
+  left: 6px;
+  width: 30px;
+  height: 16px;
+  background: #bde0ff;
+  border-radius: 999px;
+}
+
+/* backpack */
+.crewmate::after {
+  content: "";
+  position: absolute;
+  right: -6px;
+  top: 20px;
+  width: 10px;
+  height: 22px;
+  border-radius: 6px;
+  background: rgba(0,0,0,0.25);
 }
 
 .red { background: #e63946; }
@@ -72,10 +110,10 @@ iframe {
 /* ---------- GAME ---------- */
 #game {
   display: none;
+  position: relative;
   width: 100%;
   height: 100%;
   background: #121212;
-  position: relative;
 }
 
 #player {
@@ -83,10 +121,21 @@ iframe {
   width: 36px;
   height: 46px;
   background: red;
-  border-radius: 40% 40% 30% 30%;
+  border-radius: 45% 45% 30% 30%;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
+}
+
+#player::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  left: 5px;
+  width: 26px;
+  height: 14px;
+  background: #bde0ff;
+  border-radius: 999px;
 }
 
 /* joystick */
@@ -105,8 +154,8 @@ iframe {
   position: absolute;
   width: 46px;
   height: 46px;
-  border-radius: 50%;
   background: rgba(255,255,255,0.7);
+  border-radius: 50%;
   left: 32px;
   top: 32px;
 }
@@ -133,11 +182,15 @@ iframe {
     <input id="q" placeholder="Search like a crewmate…" />
   </div>
 
+  <div id="placeholder">
+    🧑‍🚀 Type something above to start searching
+  </div>
+
   <iframe id="results"></iframe>
 
   <div id="bottomBar">
-    <div class="crewmate red" id="homeBtn"></div>
-    <div class="crewmate blue" id="searchmasBtn"></div>
+    <div class="crewmate red" id="homeBtn" title="Home"></div>
+    <div class="crewmate blue" id="searchmasBtn" title="Searchmas"></div>
   </div>
 </div>
 
@@ -153,12 +206,15 @@ const home = document.getElementById("home");
 const game = document.getElementById("game");
 const results = document.getElementById("results");
 const q = document.getElementById("q");
+const placeholder = document.getElementById("placeholder");
 const player = document.getElementById("player");
 
 /* SEARCH */
 q.addEventListener("keydown", e => {
-  if (e.key === "Enter") {
+  if (e.key === "Enter" && q.value.trim()) {
     results.src = "https://www.bing.com/search?q=" + encodeURIComponent(q.value);
+    results.style.display = "block";
+    placeholder.style.display = "none";
   }
 });
 
@@ -179,9 +235,9 @@ if (location.pathname.endsWith("/play") || location.hash === "#play") {
   game.style.display = "block";
 }
 
-/* GAME MOVEMENT */
+/* MOVEMENT */
 let x = window.innerWidth / 2, y = window.innerHeight / 2;
-let speed = 3;
+const speed = 3;
 
 function move(dx, dy) {
   x += dx; y += dy;
@@ -199,20 +255,12 @@ document.addEventListener("keydown", e => {
 });
 
 /* joystick */
-let joy = document.getElementById("joystick");
-let stick = document.getElementById("stick");
-
+const joy = document.getElementById("joystick");
 joy.addEventListener("touchmove", e => {
-  let r = joy.getBoundingClientRect();
-  let t = e.touches[0];
-  let dx = t.clientX - (r.left + r.width/2);
-  let dy = t.clientY - (r.top + r.height/2);
-  move(dx * 0.05, dy * 0.05);
-});
-
-joy.addEventListener("touchend", () => {
-  stick.style.left = "32px";
-  stick.style.top = "32px";
+  const r = joy.getBoundingClientRect();
+  const t = e.touches[0];
+  move((t.clientX - (r.left + r.width/2)) * 0.05,
+       (t.clientY - (r.top + r.height/2)) * 0.05);
 });
 </script>
 </body>
